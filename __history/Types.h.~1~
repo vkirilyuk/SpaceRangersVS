@@ -1,0 +1,418 @@
+//---------------------------------------------------------------------------
+
+#ifndef TypesH
+#define TypesH
+#include "DirectX/d3dx9.h"
+#include "fmod/inc/fmod.h"
+#include "fmod/inc/fmod_errors.h"
+#include "Common.h"
+#include "Utils.h"
+//---------------------------------------------------------------------------
+class   GObject
+{
+    public:
+        double xpos;
+        double ypos;
+        bool Exists;
+};
+//---------------------------------------------------------------------------
+
+class TManager
+{
+
+};
+
+class TVisualManager : public TManager
+{
+    protected:
+        LPD3DXSPRITE* Sprite;
+    public:
+        void InitDrawingInterface(LPD3DXSPRITE* pSprite);
+};
+
+struct TLaserParam
+{
+    AnsiString TexturePath;
+    int DeltaX;
+    int DeltaY;
+    float ScalingX;
+    float ScalingY;
+};
+//---------------------------------------------------------------------------
+struct TRangerShot : public GObject
+{
+    double XSpeed,YSpeed;
+    int Damage;
+    int Type;
+    bool Second;
+    TRect ShotRect;
+    TRect ShotRectDef;
+    TRect DrawingRect;
+    TRect DrawingRectDef;
+    int MaxFrames;
+    int CurrentFrame;
+    int AnimationLevel;
+    int AnimationProgress;
+    int AnimationEnd;
+    int a,b,c,d,e,f;
+    int ID;
+};
+//---------------------------------------------------------------------------
+struct TEnemyShot : public GObject
+{
+    double XSpeed,YSpeed;
+    int Damage;
+    TRect ShotRect;
+    TRect ShotRectDef;
+    TRect DrawingRect;
+    TRect DrawingRectDef;
+};
+//---------------------------------------------------------------------------
+class TPlayer : public GObject
+{
+    public:
+        double LeftSpeed;
+        double TopSpeed;
+        double RightSpeed;
+        double BottomSpeed;
+        double Experience;
+        double HP;
+        double MaxHP;
+        int Lifes;
+        int CurrentWeapon;
+        double DroidRepair;
+        int WeaponPower;
+        bool MovingLeft;
+        bool MovingRight;
+        bool MovingUp;
+        bool MovingDown;
+
+        bool EnabledNewLifes;
+
+        bool Visible;
+};
+//---------------------------------------------------------------------------
+struct TEnemyShip : public GObject
+{
+    double HP;
+    double XSpeed;
+    double YSpeed;
+    int WeaponPower;
+    int ExperienceForMurder;
+    TRect DrawingRect;
+    TRect DrawingRectDef;
+    TRect ShipRect;
+    TRect ShipRectDef;
+    double CurrentFrame;
+    int MaxFrames;
+    int MaxShots;
+    int ShotsMade;
+    bool Locked;
+  };
+//---------------------------------------------------------------------------
+struct TRangerParameters
+{
+    int Kvarks;
+    int WeaponPowerPlus;
+    double WeaponPowerIncrease;
+    double SpeedIncrease;
+    double WeaponFireSpeedIncrease;
+    int DroidRepairPlus;
+    int ProtectionUp;
+    bool BigChanceForArtefact;
+};
+//---------------------------------------------------------------------------
+
+struct TTeslaWeapon
+{
+    int Power;
+    int Radius;
+    int ChargeMax;
+    int ChargeLast;
+    bool Exists;
+};
+//---------------------------------------------------------------------------
+struct TLightning : public GObject
+{
+    int Power;
+    int JumpesLeft;
+};
+//---------------------------------------------------------------------------
+struct TGameParameters
+{
+    //-----Main-----------
+    bool ShowFPS;
+    //-----Dominators-----
+    int MaxEcventors;
+    int MaxUrgants;
+    int MaxSmershes;
+    int MaxMenoks;
+    int MaxShtips;
+    int HealthEcventors;
+    int HealthUrgants;
+    int HealthSmershes;
+    int HealthMenoks;
+    int HealthShtips;
+    //-----Music----------
+    int  main_menu_music_count;
+    AnsiString main_menu_music_path[];
+    bool main_menu_music_playlist;
+    AnsiString main_menu_music_playlist_path;
+    bool main_menu_music_change_shuffle;
+
+    int battle_music_count;
+    AnsiString  battle_music_path[];
+    bool battle_music_playlist;
+    AnsiString battle_music_playlist_path;
+    bool battle_music_change_shuffle;
+
+    int boss_battle_music_count;
+    AnsiString boss_battle_music_path[];
+    bool boss_battle_music_playlist;
+    AnsiString boss_battle_music_playlist_path;
+    bool boss_battle_music_change_shuffle;
+    //-----statistic------
+    bool show_killed_shtips;
+    bool show_killed_menoks;
+    bool show_killed_smershes;
+    bool show_killed_urgants;
+    bool show_killed_ecventors;
+    bool show_game_time;
+    bool show_shots;
+    bool show_dominator_damage;
+    bool show_ranger_damage;
+    //-----weapons--------
+  /* Not avalaible yet
+  1_weapon_main_power=1
+  1_weapon_second_power=1
+  1_weapon_exp_to_get=0
+
+  2_weapon_main_power=1
+  2_weapon_second_power=1
+  2_weapon_exp_to_get=0
+
+  3_weapon_main_power=1
+  3_weapon_second_power=1
+  3_weapon_exp_to_get=0
+
+  4_weapon_main_power=1
+  4_weapon_second_power=1
+  4_weapon_exp_to_get=0
+
+  5_weapon_main_power=1
+  5_weapon_second_power=1
+  5_weapon_exp_to_get=0*/
+  };
+//---------------------------------------------------------------------------
+struct TFontParameters
+{
+    AnsiString Name;
+    int Size;
+};
+//---------------------------------------------------------------------------
+TFontParameters __fastcall CreateFontParameters(AnsiString Name,int Size);
+//---------------------------------------------------------------------------
+struct TStatistic
+{
+    int KilledShtips;
+    int KilledMenoks;
+    int KilledSmershes;
+    int KilledUrgants;
+    int KilledEcventors;
+    int ShotsFired;
+    float GameTime;
+    int DamageCause;
+    int DamageTaken;
+    int ArtefactsPickedUp;
+    int ArtefactsLoosed;
+    int ShotsHit;
+    int WeaponGameTimes[5];
+    bool ShowStatistic;
+    void __fastcall Clear();
+};
+//---------------------------------------------------------------------------
+class TFPSShower
+{
+    private:
+        long FPS;
+        long LastTickCount;
+        long CurrentTickCount;
+        long FrameCount;
+//----------Functions----------------------------
+    public:
+        void __fastcall Init();
+        int __fastcall GetFPS();
+        void __fastcall UpdateFPS();
+};
+//---------------------------------------------------------------------------
+class TFontManager
+{
+    private:
+        LPD3DXFONT Fonts[25];
+        bool        Exist[25];
+        LPDIRECT3DDEVICE9* FontDevice;
+        LPD3DXSPRITE*      SpritePointer;
+        TFontParameters FontParams[25];
+
+    public:
+        void            Init(LPDIRECT3DDEVICE9* Device,LPD3DXSPRITE* Sprite);
+        void            RestoreAll();
+        LPD3DXFONT      GetFont(int Index);
+        int             AddFont(AnsiString Name,int Size);
+        void            AddFontEx(int Index, AnsiString Name,int Size);
+        void            Draw(int Index,AnsiString String, int Left, int Top, D3DCOLOR Color);
+};
+//---------------------------------------------------------------------------
+class TPlaylistManager
+{
+    private:
+        TStringList* PlayList;
+        int Index;
+        bool Shuffle;
+    public:
+        void __fastcall Init(TStringList* List,bool ChangeShuffle);
+        AnsiString __fastcall GetNext();
+        AnsiString __fastcall GetPrevious();
+};
+//---------------------------------------------------------------------------
+struct TCornerText
+{
+    AnsiString  Text;
+    int         Time;
+};
+//---------------------------------------------------------------------------
+class TCornerTextManager
+{
+    private:
+        TCornerText TextQueue[50];
+        int         Count;
+        LPD3DXFONT* Font;
+
+    public:
+        void __fastcall Init(LPD3DXFONT* FontPointer);
+        TCornerText __fastcall GetCurrent();
+        void __fastcall Add(AnsiString Text,int Time);
+        void __fastcall Update();
+        bool __fastcall TextExists();
+        TCornerText __fastcall GetText(int Index);
+        void __fastcall DrawText();
+        void __fastcall DrawTextEx(int HowMuch);
+};
+//---------------------------------------------------------------------------
+struct TSongType
+{
+    FMUSIC_MODULE*  Module;
+    FSOUND_STREAM*  Stream;
+    int             Channel;
+    bool            Playing;
+    AnsiString      FileName;
+};
+//---------------------------------------------------------------------------
+class TMusicManager
+{
+    private:
+    public:
+        TSongType Songs[MAX_SONGS];
+        bool __fastcall Init(HDC Handle);
+        void __fastcall SetGlobalVolume(int Volume);
+        void __fastcall SetVolume(int Index,int Volume);
+        int  __fastcall OpenFile(AnsiString FileName);
+        void __fastcall OpenFileEx(AnsiString FileName,int Index);
+        void __fastcall PlayFile(int Index);
+        void __fastcall StopFile(int Index);
+        void __fastcall PauseFile(int Index);
+        void __fastcall StopAll();
+        int  __fastcall OpenAndPlay(AnsiString FileName);
+        void __fastcall SetLoop(int Index,bool Loop);
+        void __fastcall SetGlobalLoop(bool Loop);
+        int  __fastcall OpenAndPlayEx(AnsiString FileName,int FIndex,int SIndex,bool Loop);
+};
+//---------------------------------------------------------------------------
+struct TTextureParam
+{
+    AnsiString TextureName;
+    LPDIRECT3DTEXTURE9* Texture;
+    bool InFile;
+    int Height;
+    int Width;
+    D3DCOLOR Color;
+    bool Ex;
+};
+//---------------------------------------------------------------------------
+class TTextureManager
+{
+    private:
+        int Count;
+        TTextureParam Textures[MAX_TEXTURES];
+        LPDIRECT3DDEVICE9* OurDevice;
+        HMODULE Source;
+    public:
+        void __fastcall Init(LPDIRECT3DDEVICE9* Device, HMODULE TexSource);
+        int  __fastcall Create(AnsiString TexName,bool InFile,LPDIRECT3DTEXTURE9* Texture);
+        int  __fastcall CreateEx(AnsiString TexName,bool InFile,int Width,int Height,D3DCOLOR Color,LPDIRECT3DTEXTURE9* Texture);
+        void __fastcall FreeAll();
+        void __fastcall ReloadAll();
+        void __fastcall Free(int Index);
+        int  __fastcall FindByName(AnsiString TexName);
+        int  __fastcall FindByTexture(LPDIRECT3DTEXTURE9* Texture);
+};
+//---------------------------------------------------------------------------
+struct  TTimerSet
+{
+    int Interval;
+    double LastTime;
+    bool Enabled;
+    TMyCallBack* CallBack;
+    bool Exists;
+};
+//---------------------------------------------------------------------------
+class   TTimerManager
+{
+    private:
+        TTimerSet   TimerSets[100];
+        double Ticks;
+    public:
+        TTimerManager();
+        void __fastcall Init();
+        void __fastcall AddTimerEx(int ID,int Interval, TMyCallBack* CallBack, bool Enabled);
+        int  __fastcall AddTimer(int Interval, TMyCallBack* CallBack, bool Enabled);
+        void Update(double Delta);
+        void __fastcall Remove(int ID);
+        void __fastcall SetStatus(int ID, bool Enabled);
+        bool __fastcall GetStatus(int ID);
+};
+//---------------------------------------------------------------------------
+class TStar : public GObject
+{
+    public:
+        double Speed;
+        D3DCOLOR Color;
+};
+//---------------------------------------------------------------------------
+class   TStarsManager
+{
+    private:
+        TStar Stars[30];
+        LPD3DXLINE* pLine;
+    public:
+        void InitDrawingInterface(LPD3DXLINE* Line);
+        void Move();
+        void Set();
+        void Draw();
+};
+
+class TFileManager
+{
+    private:
+        AnsiString Names[100];
+        bool Exist[100];
+    public:
+        TFileManager();
+        ~TFileManager();
+        int  SaveFile(unsigned int Instance,AnsiString ResName,char* ResType,AnsiString Path);
+        void CleanUp();
+        void Delete(int ID);
+};
+
+#endif
+

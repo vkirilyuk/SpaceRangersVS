@@ -1,0 +1,107 @@
+{
+    "colors": {
+        "A000"   : "ff000000",
+        "FCOLOR" : "ffffffff",
+        "TCOLOR" : "ffff00ff"
+    }, 
+    "textures": [
+        {
+            "path" : "ArtPanel",
+            "color": "A000"
+        }, 
+        { "path": "WeaponUno23" },
+        { "path": "GeneralFon"  },
+        { "path": "d123"        },
+        { "path": "Undamager"   },
+        { "path": "laserTexture"},
+        { "path": "Authors"     },
+        { "path": "Controls"    },
+        { "path": "BriefingFon" },
+        { "path": "DominatorSh", "color": "TCOLOR" },
+        { "name": "RangersLogo", "path" : "Image4", "color": "A000"   },
+        { "path": "Image3", "color": "TCOLOR" },
+        { "path": "weapon1effect", "color": "TCOLOR" },
+        { "path": "Artefact", "color": "TCOLOR" },
+        { "path": "Boss", "color": "TCOLOR" },
+        { "path": "CoolExploding1", "color": "TCOLOR" },
+        { "path": "CoolExploding2", "color": "TCOLOR" },
+        { "path": "d12345", "color": "TCOLOR" },
+        { "path": "Centre", "color": "TCOLOR" },
+        { "path": "Ok", "color": "TCOLOR" },
+        { "path": "Cancel", "color": "TCOLOR" },
+        { "path": "Ranger", "color": "TCOLOR" },
+        { "path": "BriefingButtonTexture", "color": "TCOLOR" },
+        { "path": "SmallShip", "color": "A000" },
+        { "path": "BriefingPanel", "color": "A000" },
+        
+        { "path": "CheckListBoxTexture" },
+        { "path": "Fon1" },
+        { "path": "Fon2" },
+        { "path": "Fon3" },
+        { "path": "Fon4" },
+        { "path": "Fon5" },
+        { "path": "Fon6" },
+        
+        { "path": "Angle1" },
+        { "path": "Angle2" },
+        { "path": "Angle3" },
+        { "path": "Angle4" },
+        
+        { "path": "Line1" },
+        { "path": "Line2" },
+        { "path": "Line3" },
+        { "path": "Line4" },
+        
+        { "path": "Icon1" },
+        { "path": "Icon2" },
+        { "path": "Icon3" },
+        { "path": "Icon4" },
+        
+        { "path": "Light1" },
+        { "path": "Light2" },
+        
+        { "path": "dominator_0_0" },
+        { "path": "dominator_0_1" },
+        { "path": "dominator_0_2" },
+        { "path": "dominator_0_3" },
+        { "path": "dominator_0_4" },
+        
+        { "path": "dominator_1_0" },
+        { "path": "dominator_1_1" },
+        { "path": "dominator_1_2" },
+        { "path": "dominator_1_3" },
+        { "path": "dominator_1_4" },
+        
+        { "path": "dominator_2_0" },
+        { "path": "dominator_2_1" },
+        { "path": "dominator_2_2" },
+        { "path": "dominator_2_3" },
+        { "path": "dominator_2_4" },
+        
+        { "path": "WeaponUno11", "color": "TCOLOR" },
+        { "path": "WeaponUno12", "color": "TCOLOR" },
+        { "path": "WeaponUno21", "color": "TCOLOR" },
+        { "path": "WeaponUno22", "color": "TCOLOR" },
+        { "path": "WeaponUno31", "color": "TCOLOR" },
+        { "path": "WeaponUno32", "color": "TCOLOR" },
+        { "path": "WeaponUno41", "color": "TCOLOR" },
+        { "path": "WeaponUno42", "color": "TCOLOR" },
+        { "path": "WeaponUno51", "color": "TCOLOR" },
+        { "path": "WeaponUno52", "color": "TCOLOR" },
+        
+        { "path": "l0", "color": "TCOLOR" },
+        { "path": "l1", "color": "TCOLOR" },
+        { "path": "l2", "color": "TCOLOR" },
+        { "path": "l3", "color": "TCOLOR" },
+        { "path": "l4", "color": "TCOLOR" },
+        { "path": "l5", "color": "TCOLOR" },
+        { "path": "l6", "color": "TCOLOR" },
+        { "path": "l7", "color": "TCOLOR" },
+        { "path": "l8", "color": "TCOLOR" },
+        { "path": "l9", "color": "TCOLOR" },
+        { "path": "l10", "color": "TCOLOR" },
+        { "path": "l11", "color": "TCOLOR" },
+        
+        { "path": "eg00" }
+    ]
+}

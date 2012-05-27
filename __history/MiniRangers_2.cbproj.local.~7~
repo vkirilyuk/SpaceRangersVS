@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2008.09.29 16:25:53.661.cbproj,C:\Только главный\MiniRangers_2.cbproj=C:\Только главный\MiniRangers_2.cbproj</Transaction>
+    <Transaction>2008.09.29 16:46:13.856.lib,C:\Program Files (x86)\CodeGear\RAD Studio\5.0\lib\release\vclx.lib=</Transaction>
+    <Transaction>2008.09.29 16:46:54.586.lib,C:\Только главный\CBuilder_DX90_libs\ksproxy.lib=</Transaction>
+    <Transaction>2008.09.29 16:47:00.098.lib,C:\Только главный\CBuilder_DX90_libs\ksuser.lib=</Transaction>
+    <Transaction>2008.09.29 16:47:14.386.lib,C:\Только главный\CBuilder_DX90_libs\quartz.lib=</Transaction>
+    <Transaction>2008.09.29 16:47:20.856.lib,C:\Только главный\CBuilder_DX90_libs\strmiids.lib=</Transaction>
+    <Transaction>2008.09.29 16:47:34.624.lib,C:\Только главный\CBuilder_DX90_libs\msdmo.lib=</Transaction>
+    <Transaction>2009.06.09 16:15:31.481.lib,G:\Program Files\CodeGear\RAD Studio\5.0\lib\debug\vcldbx.lib=</Transaction>
+    <Transaction>2009.06.09 16:15:31.505.lib,G:\Program Files\CodeGear\RAD Studio\5.0\lib\debug\vclimg.lib=</Transaction>
+    <Transaction>2009.06.09 16:15:31.514.lib,G:\Program Files\CodeGear\RAD Studio\5.0\lib\debug\xmlrtl.lib=</Transaction>
+    <Transaction>2009.06.09 16:15:31.522.lib,G:\Program Files\CodeGear\RAD Studio\5.0\lib\debug\webdsnap.lib=</Transaction>
+    <Transaction>2009.06.09 16:15:31.528.LIB,G:\Program Files\CodeGear\RAD Studio\5.0\lib\debug\vclnp.LIB=</Transaction>
+    <Transaction>2009.06.09 16:15:31.534.lib,G:\Program Files\CodeGear\RAD Studio\5.0\lib\debug\vclie.lib=</Transaction>
+    <Transaction>2009.06.09 16:15:31.538.lib,G:\Program Files\CodeGear\RAD Studio\5.0\lib\debug\vcl.lib=</Transaction>
+    <Transaction>2009.06.09 16:15:31.543.lib,G:\Program Files\CodeGear\RAD Studio\5.0\lib\debug\vcljpg.lib=</Transaction>
+    <Transaction>2009.06.09 16:15:31.552.lib,G:\Program Files\CodeGear\RAD Studio\5.0\lib\debug\vclsmp.lib=</Transaction>
+    <Transaction>2009.06.09 16:15:31.557.lib,G:\Program Files\CodeGear\RAD Studio\5.0\lib\debug\websnap.lib=</Transaction>
+    <Transaction>2009.06.09 16:15:31.567.lib,G:\Program Files\CodeGear\RAD Studio\5.0\lib\debug\vclx.lib=</Transaction>
+    <Transaction>2009.06.09 16:15:31.571.lib,G:\Program Files\CodeGear\RAD Studio\5.0\lib\debug\vcldb.lib=</Transaction>
+    <Transaction>2009.06.09 16:15:31.576.lib,G:\Program Files\CodeGear\RAD Studio\5.0\lib\debug\vcle.lib=</Transaction>
+    <Transaction>2009.06.09 16:15:31.581.lib,G:\Program Files\CodeGear\RAD Studio\5.0\lib\debug\vclactnband.lib=</Transaction>
+    <Transaction>2009.06.09 16:16:15.333.lib,G:\Program Files\CodeGear\RAD Studio\5.0\lib\debug\vcl.lib=</Transaction>
+    <Transaction>2009.06.09 16:17:09.292.lib,G:\Program Files\CodeGear\RAD Studio\5.0\lib\release\dbrtl.lib=</Transaction>
+    <Transaction>2009.06.09 16:17:09.313.lib,G:\Program Files\CodeGear\RAD Studio\5.0\lib\release\dbxcds.lib=</Transaction>
+    <Transaction>2009.06.09 16:17:09.330.lib,G:\Program Files\CodeGear\RAD Studio\5.0\lib\release\dbxinf30.lib=</Transaction>
+    <Transaction>2009.06.09 16:17:09.343.lib,G:\Program Files\CodeGear\RAD Studio\5.0\lib\release\dbxdsnora.lib=</Transaction>
+    <Transaction>2009.06.09 16:17:09.356.lib,G:\Program Files\CodeGear\RAD Studio\5.0\lib\release\dbxdsnmss.lib=</Transaction>
+    <Transaction>2009.06.09 16:17:09.368.lib,G:\Program Files\CodeGear\RAD Studio\5.0\lib\release\dbxdb230.lib=</Transaction>
+    <Transaction>2009.06.09 16:17:09.381.lib,G:\Program Files\CodeGear\RAD Studio\5.0\lib\release\dbxase30.lib=</Transaction>
+    <Transaction>2009.06.09 16:17:09.392.lib,G:\Program Files\CodeGear\RAD Studio\5.0\lib\release\dbxora30.lib=</Transaction>
+    <Transaction>2009.06.09 16:17:09.404.lib,G:\Program Files\CodeGear\RAD Studio\5.0\lib\release\indy.lib=</Transaction>
+    <Transaction>2009.06.09 16:17:09.415.lib,G:\Program Files\CodeGear\RAD Studio\5.0\lib\release\inetdbxpress.lib=</Transaction>
+    <Transaction>2009.06.09 16:17:09.426.lib,G:\Program Files\CodeGear\RAD Studio\5.0\lib\release\tee.lib=</Transaction>
+  </Transactions>
+</BorlandProject>

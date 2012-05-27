@@ -1,0 +1,3316 @@
+//---------------------------------------------------------------------------
+
+
+
+#include <stdio.h>
+#pragma hdrstop
+
+#pragma package(smart_init)
+
+#include "main.h"
+
+#define DIRECTINPUT_VERSION 0x0800
+
+#define SAFE_DELETE(p)  { if(p) { delete (p);     (p)=NULL; } }
+#define SAFE_RELEASE(p) { if(p) { (p)->Release(); (p)=NULL; } }
+
+#define SAMPLE_BUFFER_SIZE 8  // arbitrary number of buffer elements
+
+#include "DirectX/dinput.h"
+
+LPDIRECTINPUT8       g_pDI       = NULL; // The DirectInput object
+LPDIRECTINPUTDEVICE8 g_pKeyboard = NULL; // The keyboard device
+
+HRESULT OnCreateDevice( HWND hDlg );
+VOID FreeDirectInput();
+HRESULT ReadBufferedData( HWND hDlg );
+
+//---------------------------------------------------------------------------
+HWND hWnd;
+
+TStringList* SaveFileList=new   TStringList;
+
+TTriggerManager     TriggerManager;
+TFontManager        FontManager;
+TPlaylistManager    PlaylistManager;
+TCornerTextManager  CornerTextManager;
+TNumberShower       NumberShower;
+TButtonsManager     ButtonsManager;
+TPlayerManager      PlayerManager;
+TEnemiesManager     EnemiesManager;
+TMessageBoxManager  MessageBoxManager;
+TTextureManager     TextureManager;
+TMusicManager       MusicManager;
+TTimerManager      *TimerManager;
+TFPSShower          FPSShower;
+TStatistic          PlayerStatistic;
+TStarsManager*      StarsManager;
+TEnemyShotsManager *EnemyShotsManager;
+TFileManager       *FileManager;
+
+nTextureManager*   	texManager;
+
+TPlayerShotsManager* PlayerShotsManager;
+
+TMyD3DButton MessageButton1;
+TMyD3DButton MessageButton2;
+
+int ArtPanelState=ARTPANEL_HIDDEN;
+
+LPDIRECT3D9             MainD3D           = NULL;
+LPDIRECT3DDEVICE9       MainDevice     = NULL;
+
+LPD3DXSPRITE    MainSprite;
+LPD3DXFONT      MainFont;
+LPD3DXFONT      SlaveFont;
+
+LPD3DXLINE      MainLine;
+
+TMyD3DCheckListBox GameCheckListBox;
+
+bool FindFile;
+TLaserParam LaserParam;
+
+D3DXMATRIXA16 IdentityMatrix;
+D3DXMATRIXA16 MainMatrix;
+
+TStringList* MainMenuMusicPlaylist=new TStringList;
+TStringList* BattleMusicPlaylist=new TStringList;
+TStringList* BossBattleMusicPlaylist=new TStringList;
+
+
+int TEMP;
+
+int MFONT=0;
+int TFONT=0;
+
+int ENGINE_TIMER_FPS;
+
+//------------------------Other----------------------------------------------
+TMyD3DButton        PanelButtons[6];
+TPoint PPos;
+
+TMyD3DButton MyButton;
+//------------------------TRegistry------------------------------------------
+TRegistry* MainRegistry=new TRegistry;
+//------------------------TRect----------------------------------------------
+
+TRect DrawingRects[15];
+TRect MyRect=Rect(0,0,108,36);
+TRect Rects[10];
+
+TRect DominatorRects[3][5];
+TRect DominatorDrawingRect;
+
+//------------------------My Types-------------------------------------------
+TLightning Lightnings[100];
+TTeslaWeapon RangerTesla;
+
+TGameParameters GameConfig;
+
+int UndamagerCoff;
+//------------------------Boolean--------------------------------------------
+bool AlreadyLoad=false;
+bool BriefingPause=false;
+bool Fire,FireAlt,Undamager,PauseNow,CanShot,AlreadyPressed;
+bool RangerDeads,ScoreQuestion;
+bool BriefingScrollUp,BriefingScrollDown;
+bool NeedShowFPS;
+
+bool ArtefactPanel;
+
+bool DeviceWasLost;
+
+//------------------------Double---------------------------------------------
+double Boss[15],RangerItems[200][10];
+
+double Fon_top;
+
+double FireInterval;
+
+double BriefingSpeed;
+double Briefinga=0;
+double Briefingc=0;
+
+//------------------------Integer--------------------------------------------
+int FireLevel;
+int ArtefactPanelPos;
+int LastX,LastY,CurrentX,CurrentY;
+
+
+
+int Laser[10];
+
+int RangerWeaponEffects[100][10];
+
+int Lines[100][10];
+int RocketShleif[150][5];
+
+int Artefacts[100][3];
+
+int DevVar;
+int SomeShit;
+int AuthorsTemp;
+int CurrentFonNumber;
+int RangerArtefacts[15];
+
+int Shleif[100][6];
+
+int Explodings_count;
+int Explodings[200][6];
+
+int MType=0;
+
+AnsiString GrabbedText;
+bool GrabbingText;
+int ListItemNumber;
+int TextLeft;
+int TextTop;
+
+float DominatorScalingFactor[5];
+
+int ControlingState=CS_KEYBOARD;
+
+//-----------------------AnsiString-----------------------------------------
+AnsiString TempFolder=GetCurrentDir()+"\\Data\\";
+AnsiString CurFolder=GetCurrentDir()+"\\";;
+
+//------------------------TStringList----------------------------------------
+
+TStringList* MessageTextList=new TStringList;
+
+TStringList* BriefingList=new TStringList;
+TStringList* BreifingList=new TStringList;
+TStringList* List=new TStringList;
+TStringList* NameList=new TStringList;
+TStringList* ScoreList=new TStringList;
+TStringList* stringlist=new TStringList;
+TStringList* ArtList[11];
+TStringList* slist=new TStringList;
+
+//--------------------------Textures-----------------------------------------
+LPDIRECT3DTEXTURE9 Briefingbmp2;
+LPDIRECT3DTEXTURE9 jpg1;
+LPDIRECT3DTEXTURE9 jpg3;
+LPDIRECT3DTEXTURE9 Fon;
+LPDIRECT3DTEXTURE9 CoolExploding1;
+LPDIRECT3DTEXTURE9 CoolExploding2;
+LPDIRECT3DTEXTURE9 DominatorUno[3][5];
+LPDIRECT3DTEXTURE9 WeaponImages[5][3];
+LPDIRECT3DTEXTURE9 Weapon1Effect;
+LPDIRECT3DTEXTURE9 RocketShleifImages;
+LPDIRECT3DTEXTURE9 GeneralFon;
+LPDIRECT3DTEXTURE9 LaserImage;
+LPDIRECT3DTEXTURE9 Briefingbmp1;
+Graphics::TBitmap* ImagePictures[6][3];
+LPDIRECT3DTEXTURE9 fuck;
+LPDIRECT3DTEXTURE9 RangersLogo;
+LPDIRECT3DTEXTURE9 Angle[4];
+LPDIRECT3DTEXTURE9 Line[4];
+LPDIRECT3DTEXTURE9 Icons[4];
+LPDIRECT3DTEXTURE9 Light[2];
+LPDIRECT3DTEXTURE9 Centre;
+LPDIRECT3DTEXTURE9 Panel;
+LPDIRECT3DTEXTURE9 WarningSpace;
+LPDIRECT3DTEXTURE9 SmallShip;
+LPDIRECT3DTEXTURE9 ArtPanel;
+LPDIRECT3DTEXTURE9 ArtefactImg[12];
+LPDIRECT3DTEXTURE9 Explo[19];
+LPDIRECT3DTEXTURE9 Artefact;
+LPDIRECT3DTEXTURE9 BossI;
+LPDIRECT3DTEXTURE9 DominatorShot;
+LPDIRECT3DTEXTURE9 UndamagerTexture;
+LPDIRECT3DTEXTURE9 PlayerTexture;
+
+LPDIRECT3DTEXTURE9 ScreenSaver;
+int                ScreenTime;
+
+//--------------------------------Other fuck---------------------------------
+int ghmx;
+int CurrentVolume;
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+void ProceedPhysics()
+{
+    int i;
+    TPlayer & Player=PlayerManager.Player;
+    double pp11=PlayerManager.PlayerParameters[11];
+    double pp5=PlayerManager.PlayerParameters[5];
+    double pp10=PlayerManager.PlayerParameters[10];
+    double pp3=PlayerManager.PlayerParameters[3];
+
+
+    ShipShleif(Player.xpos,Player.ypos);
+
+    for(int i=0;i<300;i++)
+    {
+        TRect PlayerShip=UpdateRect(Rects[6],Player.xpos,Player.ypos);
+        if(EnemyShotsManager->Test(i,PlayerShip,NULL))
+        {
+            if(!Undamager)
+            {
+                TPoint spos=EnemyShotsManager->GetPos(i);
+                Exploding(1,spos.x,spos.y);
+                int power = EnemyShotsManager->GetDamage(i)*(100-pp11-pp5)/100-pp10-pp3;
+                if(power<=7)
+                    power=7;
+                Player.HP-=power;
+                if(Player.HP<=0)
+                    PlayerManager.PlayerDead();
+            }
+        }
+    }
+
+    for(i=0;i<100;i++)
+        if((Artefacts[i][1]==1)&&(Artefacts[i][2]>=Player.xpos-10)&&(Artefacts[i][2]<=Player.xpos+60)&&(Artefacts[i][3]>=Player.ypos-10)&&(Artefacts[i][3]<=Player.ypos+60))
+        {
+            Artefacts[i][1]=0;
+
+            int Art=PlayerManager.NewPlayerArtefact();
+
+            AnsiString ArtefactText;
+            if(Art<12)
+                ArtefactText="Вы подняли "+strlists[Art]+" Нажмите кнопку 'P' для более детальной информации.";
+            if((Art>=13)&&(Art<=14))
+                ArtefactText="Вы подняли ремонтный комплект. Ваш корпус был полностью отремонтирован.";
+            if(Art==15)
+                ArtefactText="Вы подняли дополнительную заряд для искажателя пространства.";
+            CornerTextManager.Add(ArtefactText,200);
+        }
+}
+//---------------------------------------------------------------------------
+void __fastcall AIRepathTimer()
+{
+    TPoint a=SetNewCource();
+
+    PlayerManager.Player.RightSpeed=(a.x-PlayerManager.Player.xpos)/38;
+    PlayerManager.Player.TopSpeed=(a.y-PlayerManager.Player.ypos)/38;
+}
+//---------------------------------------------------------------------------
+void __fastcall AITimer()
+{
+	PlayerManager.Player.xpos+=PlayerManager.Player.RightSpeed;
+	PlayerManager.Player.ypos+=PlayerManager.Player.TopSpeed;
+
+	if(PlayerManager.Player.xpos<0)PlayerManager.Player.xpos=0;
+	if(PlayerManager.Player.xpos>750)PlayerManager.Player.xpos=750;
+	if(PlayerManager.Player.ypos<0)PlayerManager.Player.ypos=0;
+	if(PlayerManager.Player.ypos>509)PlayerManager.Player.ypos=509;
+
+	if(FireLevel<20)
+		FireLevel++;
+
+	for (int i=0;i<20;i++)
+		if(FireLevel==20)
+			if(EnemiesManager.Enemies[0][i].ypos>0)
+				if(TestRects(Rect(PlayerManager.Player.xpos+23,0,PlayerManager.Player.xpos+28,PlayerManager.Player.ypos),
+					Rect(EnemiesManager.Enemies[0][i].xpos-9,0,EnemiesManager.Enemies[0][i].xpos+9,PlayerManager.Player.ypos+50)))
+					{
+
+						PlayerFire(PlayerManager.Player.xpos,PlayerManager.Player.ypos);
+						FireLevel=0;
+					}
+}
+//---------------------------------------------------------------------------
+void __fastcall InitTriggers()
+{
+    TTrigger Temp;
+
+    int reason;
+    scanf("%d\n",&reason);
+    while(reason!=-1)
+    {
+		int value;
+        scanf("%d\n",&value);
+        Temp.Reason_type=reason;
+        if(reason==TR_SCORE)
+            Temp.Reason_score=value;
+        char s[1000];
+        gets(s);
+        int len=0;
+        while(s[0]!='$')
+        {
+            Temp.Script[len++]=s;
+            gets(s);
+        }
+        Temp.Script_length=len;
+        TriggerManager.AddTrigger(Temp);
+        scanf("%d\n",&reason);
+    }
+
+    Temp.Reason_type=TR_SCORE;
+/*    Temp.Reason_score=600;
+    Temp.Script_length=1;
+    Temp.Script[0]="UpgradeWeaponPower(2);";
+    TriggerManager.AddTrigger(Temp);
+
+    Temp.Reason_score=2500;
+    Temp.Script[0]="UpgradeWeaponPower(3);";
+    TriggerManager.AddTrigger(Temp);
+
+    Temp.Reason_score=8000;
+    Temp.Script[0]="UpgradeWeaponPower(5);";
+    TriggerManager.AddTrigger(Temp);*/
+
+/*    Temp.Reason_score=1000;
+    Temp.Script_length=2;
+    Temp.Script[0]="UnlockLifes();";
+    Temp.Script[1]="CreateMessageBox('Неожиданно сканер рядом с вами засек какой-то доминаторский ошметок. Ваш захват подобрал его на борт... Когда вы проанализировали объект, результаты лишили вас дара речи. Прибор позволял выполнять недоступную для Альянса технологию - создавать вокруг корабля зону искаженного пространства и времени, из-за которой все вне почти останавливается. Связь между атомами ослабевает, что позволяет дроиду лечить вас в десятки раз быстрее. Но только один минус - у него сразу было только 3 заряда. Но его конструкция позволяет заменять старые, что вдохновило вас искать и подбирать доминаторские ошметки в надежде на новые заряды.',"+AnsiString(LIGHT_BLUE+IC_INFORMATION)+",1,"+AnsiString(MESSAGETYPE_INFORMATION)+");";
+    TriggerManager.AddTrigger(Temp);*/
+
+    for(int i=0;i<5;i++)
+    {
+        Temp.Reason_score=WEAPON_SCORE[i];
+        Temp.Script_length=3;
+        Temp.Script[0]="UnlockWeapon("+String(i+1)+",0);";
+        Temp.Script[1]="UnlockWeapon("+String(i+1)+",1);";
+        Temp.Script[2]="AddCornerText('New weapon avalaible',200);";
+        TriggerManager.AddTrigger(Temp);
+    }
+
+    Temp.Reason_type=Trigger_reason_time;
+    Temp.Reason_time=10;
+    Temp.Script_length=1;
+    Temp.Script[0]="CreateMessageBox('Сработал триггер времени!',"+AnsiString(LIGHT_BLUE+IC_INFORMATION)+",1,"+AnsiString(MESSAGETYPE_INFORMATION)+");";
+    TriggerManager.AddTrigger(Temp);
+
+/*    Temp.Reason_type=Trigger_reason_score;
+    Temp.Reason_score=100;
+    Temp.Script_length=1;
+    Temp.Script[0]="CreateMessageBox('Сработал триггер очков!',"+AnsiString(LIGHT_BLUE+IC_INFORMATION)+",1,"+AnsiString(MESSAGETYPE_INFORMATION)+");";
+    TriggerManager.AddTrigger(Temp);*/
+}
+//---------------------------------------------------------------------------
+void __fastcall ShowScreen()
+{
+    __int64 BeginTime;
+    BeginTime=GetTickCount();
+
+    int FPS;
+    while(BeginTime+ScreenTime>=GetTickCount())
+    {
+        MainDevice->Clear( 0, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,D3DCOLOR_XRGB(0,0,0), 1.0f, 0 );
+        MainDevice->BeginScene();
+
+        MainSprite->Begin(D3DXSPRITE_ALPHABLEND);
+
+        MainSprite->Draw(ScreenSaver,NULL,NULL,NULL,FCOLOR);
+
+//        FontManager.Draw(MFONT,FPSShower.GetFPS(),0,0,TCOLOR);
+        MainFont->DrawTextA(MainSprite,String(FPSShower.GetFPS()).c_str(),-1,&CRect(0,0,100,100),0,TCOLOR);
+
+        MainSprite->End();
+        MainDevice->EndScene();
+        if(MainDevice->Present( NULL, NULL, NULL, NULL )==D3DERR_DEVICELOST)
+            DeviceWasLost=true;
+
+        FPSShower.UpdateFPS();
+    }
+}
+//---------------------------------------------------------------------------
+void __fastcall BackToMainMenu()
+{
+    GrabbingText=false;
+
+    TimerManager->SetStatus(T9,false);
+    TimerManager->SetStatus(T18,false);
+    GameState=GS_MAINMENU;
+    StartTimers(true);
+    PauseNow=false;
+    for(int i=0;i<6;i++)
+        PanelButtons[i].Visible=true;
+    GameCheckListBox.Visible=false;
+    SetUpMenu();
+}
+//---------------------------------------------------------------------------
+void __fastcall MessageButton1Event()
+{
+    MessageNow=false;
+    MessageBoxState=MESSAGEBOX_HIDDEN;
+    ButtonsManager.ChangeVisible(GB_MESSAGE1,false);
+    ButtonsManager.ChangeVisible(GB_MESSAGE2,false);
+
+    switch(MType)
+    {
+        case MESSAGETYPE_LOSEGAME:
+        {
+            KeyDown(BT_ESC,0);
+//            unsigned short fa=27;
+//            TShiftState shift;
+//            PostMessage(hWnd,WM_KEYDOWN,fa,0);
+        }
+        break;
+        case MESSAGETYPE_WINGAME:
+        {
+            int k=PlayerManager.Player.Experience;
+            AnsiString Score=IntToStr(k);
+            MessageBoxManager.AddMessageBox("Сохранить рекорд на "+Score+" очков? ",LIGHT_BLUE+IC_QUESTION,2,MESSAGETYPE_SCOREQUESTION);
+            ScoreQuestion=true;
+            Boss[1]=3;
+        }
+        break;
+        case MESSAGETYPE_SCOREQUESTION:
+        {
+            ScoreQuestion=false;
+            SaveScore();
+        }
+        break;
+        case MESSAGETYPE_INFORMATION:
+            Pause(0);
+        break;
+        case MESSAGETYPE_QUIT:
+            BackToMainMenu();
+        break;
+    }
+}
+//---------------------------------------------------------------------------
+void __fastcall MessageButton2Event()
+{
+    MessageNow=false;
+    MessageBoxState=MESSAGEBOX_HIDDEN;
+    ButtonsManager.ChangeVisible(GB_MESSAGE1,false);
+    ButtonsManager.ChangeVisible(GB_MESSAGE2,false);
+    switch(MType)
+    {
+        case MESSAGETYPE_SCOREQUESTION:
+            BackToMainMenu();
+        break;
+        case MESSAGETYPE_QUIT:
+            Pause(0);
+        break;
+    }
+}
+//---------------------------------------------------------------------------
+void __fastcall RenderingTimer()
+{
+    if(DeviceWasLost)
+        return;
+
+    MainDevice->Clear( 0, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,D3DCOLOR_XRGB(0,0,0), 1.0f, 0 );
+    MainDevice->BeginScene();
+    MainSprite->Begin(D3DXSPRITE_ALPHABLEND);
+
+    switch(GameState)
+    {
+        case GS_RECORDSMENU:    DrawRecordsMenu();  break;
+        case GS_AUTHORSMENU:    DrawAuthorsMenu();  break;
+        case GS_BRIEFINGMENU:   DrawBriefingMenu(); break;
+        case GS_CONTROLSMENU:   DrawControlsMenu(); break;
+        case GS_GAME:           ReDrawGameWindow(); break;
+        case GS_MAINMENU:       DrawMainMenu();     break;
+    }
+
+    MainSprite->End();
+    MainDevice->EndScene();
+    if(MainDevice->Present( NULL, NULL, NULL, NULL )==D3DERR_DEVICELOST)
+    {
+        DeviceWasLost=true;
+    }
+
+    FPSShower.UpdateFPS();
+}
+//---------------------------------------------------------------------------
+void __fastcall EngineTimer()
+{
+    if(DeviceWasLost)
+        return;
+
+    if((PlayerManager.Player.Lifes>=0)&&(!PauseNow)&&(!RangerDeads)&&(ArtPanelState==0)&&(MessageBoxState==0))
+        Fon_top+=1;
+    if(Fon_top>=4000) Fon_top=0;
+
+//    UpdateMusicChannels();
+    if(CornerTextManager.TextExists())
+        CornerTextManager.Update();
+    if((GameState==GS_GAME)&&(ControlingState==CS_MOUSE))
+        PlayerManager.UpdatePlayerSpeedOverMouse();
+
+    if((GameState==GS_GAME)||(GameState==GS_MAINMENU))
+        if(!PauseNow)
+        {
+            PlayerManager.TryPlayerFire();
+            PlayerShotsManager->Move();
+            EnemyShotsManager->Move();
+            MoveArtefacts();
+            StarsManager->Move();
+            EnemiesManager.MoveEnemies();
+            MoveShleif();
+            MoveRocketShleif();
+            PlayerManager.RepairPlayerShip();
+            TestForCrash();
+
+            if(Undamager)
+            {
+                UndamagerCoff-=1;
+                if(UndamagerCoff<0)
+                    Undamager=false;
+            }
+            PlayerStatistic.GameTime+=1/75.0;
+        }
+
+    if(GameState==GS_GAME)
+        if(!PauseNow)
+        {
+            PlayerManager.MovePlayerShip();
+            PlayerManager.ProceedPhysics();
+            ProceedPhysics();
+            UpdateGameOverNewScore();
+            TriggerManager.UpdateTriggers();
+        }
+
+    if(GameState==GS_MAINMENU)
+        ShipShleif(PlayerManager.Player.xpos,PlayerManager.Player.ypos);
+}
+//---------------------------------------------------------------------------
+void __fastcall RestoreMyD3D()
+{
+    MainSprite->OnLostDevice();
+    MainFont->OnLostDevice();
+    MainDevice->Release();
+    InitD3D(hWnd);
+	TextureManager.ReloadAll();
+	texManager->ReloadAll();
+    //--------Just part of code, that must assembly when game restore
+    PlayerManager.StopMoving();
+
+    DeviceWasLost=false;
+
+}
+//---------------------------------------------------------------------------
+void __fastcall UpdateMusicChannels()
+{
+    if(!MusicManager.Songs[MusicID].Playing)
+    {
+        AnsiString FileName=PlaylistManager.GetNext();
+        if(MusicManager.Songs[MusicID].FileName!=FileName)
+            MusicManager.OpenFileEx(FileName,MusicID);
+        MusicManager.PlayFile(MusicID);
+    }
+}
+//---------------------------------------------------------------------------
+void __fastcall DrawRecordsMenu()
+{
+    MainSprite->Draw(jpg3,NULL,NULL,NULL,FCOLOR);
+
+    int i,l;
+    double C=GLOBAL_SCALING_FACTOR;
+
+    l=ScoreList->Count;
+    if(l>10)    l=10;
+
+    for(i=0;i<l;i++)
+    {
+        AnsiString Nm=String(i+1)+"."+NameList->Strings[i];
+        FontManager.Draw(MFONT,Nm,250*C,(100+35*i)*C,D3DCOLOR_XRGB(125,125,225));
+        FontManager.Draw(MFONT,ScoreList->Strings[i],(550-ScoreList->Strings[i].Length()*10)*C,(100+35*i)*C,D3DCOLOR_XRGB(125,125,225));
+    }
+
+    if(l==0)
+        MainFont->DrawTextA(MainSprite,"You haven't end game yet.",-1,&CRect(260*C,250*C,1000,1000),0,D3DCOLOR_XRGB(125,125,255));
+    MainFont->DrawTextA(MainSprite,"Для возврата нажмите Esc.",-1,&CRect(265*C,500*C,1000,1000),0,D3DCOLOR_XRGB(125,125,255));
+
+    if(GrabbingText)
+        MainFont->DrawText(MainSprite,GrabbedText.c_str(),-1,&CRect(TextLeft*C,TextTop*C,1000,1000),0,D3DCOLOR_XRGB(255,125,125));
+}
+//---------------------------------------------------------------------------
+void __fastcall DrawAuthorsMenu()
+{
+    MainSprite->Draw(jpg1,NULL,NULL,NULL,FCOLOR);
+
+    int a;
+    double C=GLOBAL_SCALING_FACTOR;
+
+    for(a=0;a<slist->Count;a++)
+        if(550-DevVar+22*a>=0)
+            MainFont->DrawTextA(MainSprite,slist->Strings[a].c_str(),-1,&CRect(340*C,(550-DevVar+22*a+20)*C,2000*C,530*C),0,D3DCOLOR_XRGB(255,0,0));
+
+    a=slist->Count-2;
+    if((550-DevVar+22*a>=5)||(AuthorsTemp==50))
+        DevVar+=1;
+    else
+        AuthorsTemp+=1;
+    a=slist->Count;
+
+    if(550-DevVar+22*a<=0)
+        MainFont->DrawTextA(MainSprite,"Для возврата нажмите Esc.",-1,&CRect(340*C,(20+5)*C,2000,2000),0,D3DCOLOR_XRGB(255,0,0));
+}
+//---------------------------------------------------------------------------
+void __fastcall DrawControlsMenu()
+{
+    MainSprite->Draw(jpg3,NULL,NULL,NULL,FCOLOR);
+
+    RECT rc;
+
+    double C=GLOBAL_SCALING_FACTOR;
+
+    SetRect( &rc, 215*C, 50*C, 2000, 2000 );
+    MainFont->DrawTextA(MainSprite,"[Up,Down,Left,Right] - перемещение корабля.",-1,&rc,0,D3DCOLOR_XRGB(125,125,255));
+    SetRect( &rc, 285*C, 90*C, 2000, 2000 );
+    MainFont->DrawTextA(MainSprite,"[1,2,3,4,5] - смена оружия.",-1,&rc,0,D3DCOLOR_XRGB(125,125,255));
+    SetRect( &rc, 292*C,130*C, 2000, 2000 );
+    MainFont->DrawTextA(MainSprite,"[Shift] - кварковая бомба.",-1,&rc,0,D3DCOLOR_XRGB(125,125,255));
+    SetRect( &rc, 250*C,170*C, 2000, 2000 );
+    MainFont->DrawTextA(MainSprite,"[Cntl] - стрельба первичного оружия.",-1,&rc,0,D3DCOLOR_XRGB(125,125,255));
+    SetRect( &rc, 232*C,210*C, 2000, 2000 );
+    MainFont->DrawTextA(MainSprite,"[Alt] - стрельба альтернативного оружия.",-1,&rc,0,D3DCOLOR_XRGB(125,125,255));
+    SetRect( &rc, 242*C,250*C, 2000, 2000 );
+    MainFont->DrawTextA(MainSprite,"[A] - автострельба первичного оружия.",-1,&rc,0,D3DCOLOR_XRGB(125,125,255));
+    SetRect( &rc, 226*C,290*C, 2000, 2000 );
+    MainFont->DrawTextA(MainSprite,"[S] - автострельба альтенативного оружия.",-1,&rc,0,D3DCOLOR_XRGB(125,125,255));
+    SetRect( &rc, 295*C,330*C, 2000, 2000 );
+    MainFont->DrawTextA(MainSprite,"[P] - показать артефакты.",-1,&rc,0,D3DCOLOR_XRGB(125,125,255));
+    SetRect( &rc, 325*C,370*C, 2000, 2000 );
+    MainFont->DrawTextA(MainSprite,"[F] - показать FPS.",-1,&rc,0,D3DCOLOR_XRGB(125,125,255));
+    SetRect( &rc, 318*C,410*C, 2000, 2000 );
+    MainFont->DrawTextA(MainSprite,"[Pause] - пауза игры.",-1,&rc,0,D3DCOLOR_XRGB(125,125,255));
+    SetRect( &rc, 347*C,450*C, 2000, 2000 );
+    MainFont->DrawTextA(MainSprite,"[Esc] - выход.",-1,&rc,0,D3DCOLOR_XRGB(125,125,255));
+    SetRect( &rc, 292*C,510*C, 2000, 2000 );
+    MainFont->DrawTextA(MainSprite,"Для возврата нажмите Esc.",-1,&rc,0,D3DCOLOR_XRGB(125,125,255));
+}
+//---------------------------------------------------------------------------
+void __fastcall DrawBriefingMenu()
+{
+    D3DXMatrixScaling(&MainMatrix,GLOBAL_SCALING_FACTOR,GLOBAL_SCALING_FACTOR,1);
+    MainDevice->SetTransform(D3DTS_WORLD,&MainMatrix);
+
+    MainSprite->Draw(Briefingbmp2,NULL,NULL,&CVector(760-Briefinga,760-Briefinga,0),FCOLOR);
+    MainSprite->Draw(Briefingbmp2,NULL,NULL,&CVector(-Briefinga,-Briefinga,0),FCOLOR);
+
+    Briefinga+=0.333;
+
+    if(Briefinga>=760)
+        Briefinga=0;
+
+    for(int i=0;i<BriefingList->Count;i++)
+        if(400-Briefingc+20*i>=0)
+            if(400-Briefingc+20*i<=580)
+                MainFont->DrawTextA(MainSprite,BriefingList->Strings[i].c_str(),-1,&CRect(335,400-Briefingc+20*i,SCREEN_WIDTH,SCREEN_HEIGHT),0,D3DCOLOR_XRGB(0,255,255));
+
+    if((!BriefingScrollUp)&&(!BriefingScrollDown))
+        Briefingc+=BriefingSpeed/3;
+
+    if(BriefingScrollUp)
+        Briefingc+=2;
+    if(BriefingScrollDown)
+        Briefingc-=2;
+
+    if(Briefingc>20*BriefingList->Count-110)
+    {
+        BriefingSpeed=0;
+        Briefingc=20*BriefingList->Count-110;
+    }
+
+    if(Briefingc<0)
+    {
+        BriefingSpeed=0;
+        Briefingc=0;
+    }
+
+    MainSprite->Draw(Briefingbmp1,NULL,NULL,NULL,FCOLOR);
+
+
+    ButtonsManager.Draw();
+}
+//---------------------------------------------------------------------------
+void __fastcall DrawArtefactPanel()
+{
+    MainSprite->Draw(ArtPanel,NULL,NULL,NULL,FCOLOR);
+
+    int qa=0;
+    for(int i=0;i<11;i++)
+    if(RangerArtefacts[i]!=0)
+    {
+        MainSprite->Draw(ArtefactImg[i],NULL,NULL,&CVector(24,43+qa,0),FCOLOR);
+        qa+=20;
+    }
+
+    for(int i=0;i<GameCheckListBox.ItemCount;i++)
+    {
+        if(GameCheckListBox.Items[i].Checked)
+            MainSprite->Draw(GameCheckListBox.Texture,&GameCheckListBox.CheckedItem,NULL,&CVector(GameCheckListBox.Position.left,
+            GameCheckListBox.Position.top+20*i,0),FCOLOR);
+        else
+            MainSprite->Draw(GameCheckListBox.Texture,&GameCheckListBox.UncheckedItem,NULL,&CVector(GameCheckListBox.Position.left,
+            GameCheckListBox.Position.top+20*i,0),FCOLOR);
+
+        GameCheckListBox.Font->DrawText(MainSprite,GameCheckListBox.Items[i].Name.c_str(),-1,
+        &CRect(GameCheckListBox.Position.left+20,GameCheckListBox.Position.top+20*i,2000,2000),0,D3DCOLOR_ARGB(255,0,0,0));
+    }
+
+    MainSprite->Draw(ArtefactImg[11],NULL,NULL,&CVector(25,43+qa,0),FCOLOR);
+
+    AnsiString Line="На борту "+String((int)PlayerManager.PlayerParameters[7])+" КБ.";
+
+    GameCheckListBox.Font->DrawTextA(MainSprite,Line.c_str(),-1,&CRect(55,43+qa,1000,1000),0,D3DCOLOR_XRGB(0,0,0));
+
+    if(GameCheckListBox.CheckedItemNumber>-1)
+    {
+
+        int Number = StrToInt(stringlist->Strings[GameCheckListBox.CheckedItemNumber]);
+        int Count=ArtList[Number]->Count;
+        for(int i=0;i<Count;i++)
+            MainFont->DrawTextA(MainSprite,ArtList[Number]->Strings[i].c_str(),-1,&CRect(35,325+10*i,155+35,100+325+10*i),0,D3DCOLOR_XRGB(0,0,0));
+	}
+}
+//---------------------------------------------------------------------------
+void __fastcall LoadD3DXResources()
+{
+	int i;
+
+	for(i=0;i<6;i++)
+	{
+
+		AnsiString TexName=TempFolder+"TempBmp"+String(i)+".bmp";
+		TextureManager.Create(TexName,true,&PanelButtons[i].Texture);
+    }
+
+    for(i=0;i<12;i++)
+		TextureManager.CreateEx("l"+String(i),false,0,0,TCOLOR,&ArtefactImg[i]);
+
+    TextureManager.CreateEx("BriefingButtonTexture",false,0,0,TCOLOR,&MyButton.Texture);
+
+	TextureManager.CreateEx("DominatorSh",false,0,0,TCOLOR,&DominatorShot);
+    TextureManager.CreateEx("Image4",false,0,0,D3DCOLOR_XRGB(0,0,0),&RangersLogo);
+    TextureManager.Create("WeaponUno23",false,&RocketShleifImages);
+    int l=random(6)+1;
+    AnsiString Nm="Fon"+String(l);
+    TextureManager.Create("Controls",false,&jpg3);
+    TextureManager.Create("Authors",false,&jpg1);
+    TextureManager.Create("BriefingFon",false,&Briefingbmp2);
+    TextureManager.CreateEx("BriefingPanel",false,0,0,D3DCOLOR_XRGB(0,0,0),&Briefingbmp1);
+    TextureManager.Create(Nm,false,&Fon);
+    TextureManager.Create("GeneralFon",false,&GeneralFon);
+    for(int x=0;x<3;x++)
+        for(i=0;i<5;i++)
+        {
+            AnsiString ResName="Dominator_"+String(x)+"_"+String(i);
+            TextureManager.Create(ResName,false,&DominatorUno[x][i]);
+        }
+
+    for(i=0;i<5;i++)
+        for(int m=0;m<2;m++)
+        {
+            AnsiString ResName="WeaponUno"+String(i+1)+String(m+1);
+            TextureManager.CreateEx(ResName,false,0,0,TCOLOR,&WeaponImages[i][m]);
+        }
+    TextureManager.CreateEx("Image3",false,0,0,TCOLOR,&fuck);
+    TextureManager.CreateEx("weapon1effect",false,0,0,TCOLOR,&Weapon1Effect);
+    TextureManager.CreateEx("Artefact",false,0,0,TCOLOR,&Artefact);
+    TextureManager.CreateEx("Boss",false,0,0,TCOLOR,&BossI);
+    for(i=0;i<18;i++)
+    {
+		AnsiString  TexName="eg";
+		if(i<10)    TexName+="0"+String(i);
+		if(i>=10)   TexName+=String(i);
+		TextureManager.CreateEx(TexName,false,0,0,TCOLOR,&Explo[i]);
+	}
+    TextureManager.CreateEx("CoolExploding1",false,0,0,TCOLOR,&CoolExploding1);
+    TextureManager.CreateEx("CoolExploding2",false,0,0,TCOLOR,&CoolExploding2);
+    if(!FindFile)
+        TextureManager.Create("laserTexture",false,&LaserImage);
+    else
+    {
+        AnsiString FileName;
+        if(LaserParam.TexturePath[2]==':')
+            FileName=LaserParam.TexturePath;
+        else
+            FileName=ExeDir+LaserParam.TexturePath;
+        TextureManager.Create(FileName,true,&LaserImage);
+    }
+    TextureManager.Create("d123",false,&Panel);
+    TextureManager.CreateEx("d12345",false,0,0,FCOLOR,&WarningSpace);
+    TextureManager.CreateEx("SmallShip",false,0,0,D3DCOLOR_ARGB(255,0,0,0),&SmallShip);
+    TextureManager.CreateEx("Artpanel",false,0,0,D3DCOLOR_ARGB(255,0,0,0),&ArtPanel);
+    TextureManager.Create("CheckListBoxTexture",false,&GameCheckListBox.Texture);
+    TextureManager.Create("Undamager",false,&UndamagerTexture);
+    //-------------------MessageBox---------------------------
+    for (i=0;i<4;i++)
+    {
+        AnsiString FileName="Angle"+String(i+1);
+        TextureManager.CreateEx(FileName,false,0,0,TCOLOR,&Angle[i]);
+    }
+    for (i=0;i<4;i++)
+    {
+        AnsiString FileName="Line"+String(i+1);
+        TextureManager.CreateEx(FileName,false,0,0,TCOLOR,&Line[i]);
+    }
+    for (i=0;i<4;i++)
+    {
+        AnsiString FileName="Icon"+String(i+1);
+        TextureManager.CreateEx(FileName,false,0,0,TCOLOR,&Icons[i]);
+    }
+    for (i=0;i<2;i++)
+    {
+        AnsiString FileName="Light"+String(i+1);
+        TextureManager.CreateEx(FileName,false,0,0,TCOLOR,&Light[i]);
+    }
+    TextureManager.CreateEx("Centre",false,0,0,TCOLOR,&Centre);
+    TextureManager.CreateEx("Ok",false,0,0,TCOLOR,&MessageButton1.Texture);
+    TextureManager.CreateEx("Cancel",false,0,0,TCOLOR,&MessageButton2.Texture);
+    //-------------------End MessageBox-------------------------
+
+    TextureManager.Create("Screen",false,&ScreenSaver);
+    if(TextureManager.CreateEx("Ranger",false,0,0,TCOLOR,&PlayerTexture)==-1)
+        PostQuitMessage(0);
+}
+//---------------------------------------------------------------------------
+void __fastcall ApplyRecord()
+{
+	GrabbingText=false;
+	NameList->Strings[ListItemNumber]=GrabbedText;
+
+//    unsigned short fa=27;
+//    PostMessage(hWnd,WM_KEYDOWN,fa,0);
+
+	KeyDown(BT_ESC,0);
+
+	RecordButton();
+}
+//---------------------------------------------------------------------------
+HRESULT InitD3D( HWND hWnd )
+{
+	if( NULL == ( MainD3D = Direct3DCreate9( D3D_SDK_VERSION ) ) )
+		return E_FAIL;
+
+	D3DPRESENT_PARAMETERS d3dpp;
+
+	D3DDISPLAYMODE Mode;
+	MainD3D->GetAdapterDisplayMode(D3DADAPTER_DEFAULT, &Mode);
+
+	ZeroMemory( &d3dpp, sizeof(d3dpp) );
+	d3dpp.BackBufferFormat = Mode.Format;
+
+	d3dpp.Windowed = true;
+	d3dpp.Windowed = false;
+	d3dpp.FullScreen_RefreshRateInHz=75;
+	d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
+//	d3dpp.PresentationInterval=D3DPRESENT_INTERVAL_DEFAULT;
+	d3dpp.EnableAutoDepthStencil = true;
+	d3dpp.AutoDepthStencilFormat = D3DFMT_D16;
+
+	d3dpp.BackBufferWidth=SCREEN_WIDTH;
+	d3dpp.BackBufferHeight=SCREEN_HEIGHT;
+	d3dpp.hDeviceWindow=hWnd;
+	d3dpp.BackBufferCount=1;
+
+	if( FAILED( MainD3D->CreateDevice( D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hWnd,
+									  D3DCREATE_SOFTWARE_VERTEXPROCESSING,
+									  &d3dpp, &MainDevice ) ) )
+	{
+		SystemCrash("Пробемы при инициализации главного интерфейса DirectX","Не могу настоить графику",0);
+		return E_FAIL;
+	}
+
+	MainDevice->SetRenderState( D3DRS_AMBIENT, 0xffffffff );
+
+	D3DXCreateSprite(MainDevice,&MainSprite);
+
+	D3DXCreateFontA(MainDevice,12, 0, FW_DONTCARE, 1, FALSE, DEFAULT_CHARSET,
+						 OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE,
+						 NULL, &SlaveFont);
+
+	D3DXCreateLine(MainDevice,&MainLine);
+	MainLine->SetAntialias(true);
+
+	DeviceWasLost=false;
+
+	D3DXMatrixIdentity(&IdentityMatrix);
+    return S_OK;
+}
+//---------------------------------------------------------------------------
+void __fastcall GameKeyDown(int Key,bool CanExit, LPARAM lParam)
+{
+    switch (Key)
+    {
+        case BT_PAUSE: Pause(2);                   break;
+        case BT_LEFT: PlayerManager.Player.MovingLeft=true;    break;
+        case BT_UP: PlayerManager.Player.MovingUp=true;      break;
+        case BT_RIGHT: PlayerManager.Player.MovingRight=true;   break;
+        case BT_DOWN: PlayerManager.Player.MovingDown=true;    break;
+        case BT_SHIFT: SuperWeapon();             break;
+        case BT_CTRL: Fire=true;                 break;
+        case BT_A: Fire=!Fire;                break;
+        case BT_ALT: FireAlt=true;              break;
+        case BT_S: FireAlt=!FireAlt;          break;
+        case BT_O: PlayerStatistic.ShowStatistic=!PlayerStatistic.ShowStatistic;
+                                            break;
+        case BT_P:    if(ArtPanelState==0)    ShowArtefacts();
+                    if(ArtPanelState==2)    HideArtefacts();
+                    break;
+        case BT_M:  if(ControlingState==CS_KEYBOARD)   ControlingState=CS_MOUSE;
+                else                            ControlingState=CS_KEYBOARD;
+                                            break;
+/*        case 117:
+            if(CanExit)
+            {
+//                LoadGame("qsave",1);
+//                CornerTextManager.Add("Игра успешно загружена.",512);
+                CornerTextManager.Add("Временно не работает.",512);
+            }
+                                            break;
+        case 116:
+            if(CanExit)
+            {
+                SaveGame("qsave",1);
+                CornerTextManager.Add("Игра успешно сохранена.",512);
+            }
+                                            break;*/
+        case BT_1:
+        case BT_2:
+        case BT_3:
+        case BT_4:
+        case BT_5:
+        {
+            if((Laser[1]==0)&&(PlayerManager.RangerWeapon[Key-BT_1+1][0][1]==1))
+                PlayerManager.Player.CurrentWeapon=Key-BT_1+1;
+            if(PlayerManager.RangerWeapon[Key-BT_1+1][0][1]==0)
+                CornerTextManager.Add("This weapon isn't avalaible yet.",200);
+            if(Laser[1]==1)
+                CornerTextManager.Add("Can't change weapon. Laser is enabled.",200);
+                                            break;
+        }
+    }
+
+/*    TShiftState states;
+    states<<ssAlt<<ssShift<<ssCtrl;
+    TShiftState St;
+
+    if((GameState==GS_GAME)&&(Shift==states)&&(Key>=112)&&(Key<=115)&&(CanExit)&&(PlayerManager.Player.Lifes>=0))
+    {
+        int Cheat=Key-111;
+        CornerTextManager.Add("Как не стыдно?!",512);
+        ActivateCheat(Cheat);
+    }
+    if((GameState==GS_GAME)&&(Shift==St)&&(Key==113)&&(CanExit)&&(PlayerManager.Player.Lifes>=0))
+    {
+//  Pause();
+//  if(SaveDialog1->Execute())
+//    SaveGame(SaveDialog1->FileName,2);
+//  Pause();
+    }
+
+    if((GameState==GS_GAME)&&(Shift==St)&&(Key==114)&&(CanExit)&&(PlayerManager.Player.Lifes>=0))
+    {
+//  Pause();
+//  if(OpenDialog1->Execute())
+//    LoadGame(OpenDialog1->FileName,2);
+//  Pause();
+    }                    */
+}
+//---------------------------------------------------------------------------
+void __fastcall CreateConfig()
+{
+    TResourceStream* Stream=new TResourceStream(NULL,"DefaultConfig",RT_RCDATA);
+    Stream->SaveToFile(ExeDir+"config.cfg");
+    Stream->Free();
+}
+//---------------------------------------------------------------------------
+bool __fastcall InitConfig()
+{
+if(!FileExists(ExeDir+"Config.cfg"))
+  {
+  PostQuitMessage(0);
+  return false;
+  }
+TIniFile *Ini=new TIniFile(ExeDir+"config.cfg");
+
+//-----Main-------------
+
+GameConfig.ShowFPS=Ini->ReadBool("main","show_fps",false);
+NeedShowFPS=GameConfig.ShowFPS;
+
+    ENGINE_TIMER_FPS=Ini->ReadInteger("Main","ENGINE_TIMER_FPS",100);
+    if(ENGINE_TIMER_FPS>250)
+        ENGINE_TIMER_FPS=250;
+    if(ENGINE_TIMER_FPS<50)
+        ENGINE_TIMER_FPS=50;
+
+    ScreenTime=Ini->ReadInteger("Main","Screen_time",3000);
+
+//-----Dominators-------
+GameConfig.MaxShtips=Ini->ReadInteger("Dominators","max_shtips",25);
+GameConfig.MaxMenoks=Ini->ReadInteger("Dominators","max_menoks",10);
+GameConfig.MaxSmershes=Ini->ReadInteger("Dominators","max_smershes",7);
+GameConfig.MaxUrgants=Ini->ReadInteger("Dominators","max_Urgants",5);
+GameConfig.MaxEcventors=Ini->ReadInteger("Dominators","max_Ecventors",2);
+
+GameConfig.HealthShtips=Ini->ReadInteger("Dominators","health_shtip",10);
+GameConfig.HealthMenoks=Ini->ReadInteger("Dominators","health_menok",20);
+GameConfig.HealthSmershes=Ini->ReadInteger("Dominators","health_smersh",75);
+GameConfig.HealthUrgants=Ini->ReadInteger("Dominators","health_urgant",250);
+GameConfig.HealthEcventors=Ini->ReadInteger("Dominators","health_ecventor",750);
+
+//-----Music-------------------------------------
+CurrentVolume=Ini->ReadInteger("Music","global_volume",-1);
+
+    if(CurrentVolume<0)
+        CurrentVolume=100;
+
+//------------Begin of main menu-----------------------
+
+GameConfig.main_menu_music_playlist=Ini->ReadBool("Music","main_menu_music_playlist",false);
+if(!GameConfig.main_menu_music_playlist)
+    {
+    GameConfig.main_menu_music_count=Ini->ReadInteger("Music","main_menu_music_count",0);
+    if(GameConfig.main_menu_music_count>0)
+        for(int i=0;i<GameConfig.main_menu_music_count;i++)
+            MainMenuMusicPlaylist->Add(Ini->ReadString("Music","main_menu_music_path_"+String(i+1),""));
+    }
+else
+    {
+    GameConfig.main_menu_music_playlist_path=Ini->ReadString("Music","main_menu_music_playlist_path","");
+    InitPlaylist(GameConfig.main_menu_music_playlist_path,&MainMenuMusicPlaylist,&GameConfig.main_menu_music_count);
+    }
+GameConfig.main_menu_music_change_shuffle=Ini->ReadBool("Music","main_menu_music_change_shuffle",0);
+
+//------------End of main menu and begin of battle-----
+GameConfig.battle_music_playlist=Ini->ReadBool("Music","Battle_music_playlist",false);
+if(!GameConfig.battle_music_playlist)
+    {
+    GameConfig.battle_music_count=Ini->ReadInteger("Music","Battle_music_count",0);
+    if(GameConfig.battle_music_count>0)
+        for(int i=0;i<GameConfig.battle_music_count;i++)
+            BattleMusicPlaylist->Add(Ini->ReadString("Music","battle_music_path_"+String(i+1),""));
+    }
+else
+    {
+    GameConfig.battle_music_playlist_path=Ini->ReadString("Music","battle_music_playlist_path","");
+    InitPlaylist(GameConfig.battle_music_playlist_path,&BattleMusicPlaylist,&GameConfig.battle_music_count);
+    }
+GameConfig.battle_music_change_shuffle=Ini->ReadBool("Music","battle_music_change_shuffle",0);
+
+//------------End of battle and begin of boss battle---
+GameConfig.boss_battle_music_playlist=Ini->ReadBool("Music","boss_Battle_music_playlist",false);
+if(!GameConfig.boss_battle_music_playlist)
+    {
+    GameConfig.boss_battle_music_count=Ini->ReadInteger("Music","boss_Battle_music_count",0);
+    if(GameConfig.boss_battle_music_count>0)
+        for(int i=0;i<GameConfig.boss_battle_music_count;i++)
+            BossBattleMusicPlaylist->Add(Ini->ReadString("Music","boss_battle_music_path_"+String(i+1),""));
+    }
+else
+    {
+    GameConfig.boss_battle_music_playlist_path=Ini->ReadString("Music","boss_battle_music_playlist_path","");
+    InitPlaylist(GameConfig.boss_battle_music_playlist_path,&BossBattleMusicPlaylist,&GameConfig.boss_battle_music_count);
+    }
+GameConfig.boss_battle_music_change_shuffle=Ini->ReadBool("Music","boss_battle_music_change_shuffle",0);
+
+//----------------------Full end of music--------------
+
+//-----The-most-difficult-part-of-the-config-----
+
+
+//-----Statistic--------*/
+return true;
+}
+//---------------------------------------------------------------------------
+void __fastcall InitGame()
+{
+    if(!FileExists("config.cfg"))
+        CreateConfig();
+    InitConfig();
+
+    MainRegistry->RootKey=HKEY_LOCAL_MACHINE;
+    if(!MainRegistry->OpenKey("\\Software\\Beta Team\\Mini Space Rangers: Dominators Attack",true))
+    {
+        SystemCrash("Нет доступа к реестру.","Не могу создать параметры.",MB_OK+MB_ICONERROR);
+        return;
+    }
+    MainRegistry->GetValueNames(List);
+
+    for(int i=0;i<List->Count/2;i++)
+    {
+        NameList->Add(MainRegistry->ReadString("Name"+String(i+1)));
+        ScoreList->Add(MainRegistry->ReadInteger("Score"+String(i+1)));
+    }
+
+    ReorderScore();
+
+    randomize();
+}
+//---------------------------------------------------------------------------
+void __fastcall SetConstants()
+{
+    Rects[0]=Rect(0,0,16,32);
+    Rects[1]=Rect(0,0,32,36);
+    Rects[2]=Rect(0,0,56,42);
+    Rects[3]=Rect(0,0,70,82);
+    Rects[4]=Rect(0,0,74,117);
+    Rects[5]=Rect(0,0,200,175);
+    Rects[6]=Rect(10,5,30,45);
+    Rects[7]=Rect(15,10,50,385);
+    Rects[8]=Rect(5,386,57,475);
+    Rects[9]=Rect(20,20,190,160);
+
+    DrawingRects[0]=Rect(0,0,41,37);
+    DrawingRects[1]=Rect(0,0,32,35);
+    DrawingRects[2]=Rect(0,0,55,42);
+    DrawingRects[3]=Rect(0,0,70,76);
+    DrawingRects[4]=Rect(0,0,73,117);
+
+    DrawingRects[5]=Rect(0,0,121,125);
+    DrawingRects[6]=Rect(0,0,65,65);
+
+    DominatorDrawingRect=Rect(0,0,64,64);
+
+    DominatorRects[0][0]=Rect(0,0,16,32);
+    DominatorRects[0][1]=Rect(0,0,32,35);
+    DominatorRects[0][2]=Rect(0,0,55,42);
+    DominatorRects[0][3]=Rect(0,0,70,76);
+    DominatorRects[0][4]=Rect(0,0,73,117);
+
+    DominatorRects[1][0]=Rect(0,0,16,32);
+    DominatorRects[1][1]=Rect(0,0,37,29);
+    DominatorRects[1][2]=Rect(0,0,57,55);
+    DominatorRects[1][3]=Rect(0,0,81,75);
+    DominatorRects[1][4]=Rect(0,0,118,120);
+
+    DominatorRects[2][0]=Rect(0,0,16,32);
+    DominatorRects[2][1]=Rect(0,0,30,24);
+    DominatorRects[2][2]=Rect(0,0,58,57);
+    DominatorRects[2][3]=Rect(0,0,47,75);
+    DominatorRects[2][4]=Rect(0,0,118,118);
+
+    DrawingRects[8]=Rect(0,0,10,12);
+    DrawingRects[9]=Rect(0,0,6,18);
+    DrawingRects[10]=Rect(0,0,10,12);
+    DrawingRects[11]=Rect(0,0,15,15);
+    DrawingRects[12]=Rect(0,0,1,2);
+    DrawingRects[13]=Rect(0,0,100,100);
+    DrawingRects[14]=Rect(0,0,6,32);
+
+    DominatorScalingFactor[0]=0.4*2;
+    DominatorScalingFactor[1]=0.45*2;
+    DominatorScalingFactor[2]=0.6*2;
+    DominatorScalingFactor[3]=0.75*2;
+    DominatorScalingFactor[4]=1*2;
+}
+//---------------------------------------------------------------------------
+void __fastcall LoadResources()
+{
+    if(TEXTRES_LOCATION==NULL)
+    {
+        SystemCrash("Не найдена библиотека 'TextResource.dll'. Проверте наличие этого файла в папке с игрой.","Ошибка при запуске.",MB_OK+MB_ICONERROR);
+        return;
+    }
+    if(GRAPHRES_LOCATION==NULL)
+    {
+        SystemCrash("Не найдена библиотека 'GraphResource.dll'. Проверте наличие этого файла в папке с игрой.","Ошибка при запуске.",MB_OK+MB_ICONERROR);
+        return;
+    }
+
+    TResourceStream* Stream;
+
+    Stream=new TResourceStream((int)TEXTRES_LOCATION,"Text_Developers",RT_RCDATA);
+    slist->LoadFromStream(Stream);
+
+    Stream=new TResourceStream((int)TEXTRES_LOCATION,"Text_mission_1",RT_RCDATA);
+    BriefingList->LoadFromStream(Stream);
+
+    for(int i=0;i<11;i++)
+    {
+        ArtList[i]=new TStringList;
+        Stream=new TResourceStream((int)TEXTRES_LOCATION,"Text_artefact_"+String(i+1),RT_RCDATA);
+        ArtList[i]->LoadFromStream(Stream);
+    }
+
+
+    for(int i=0;i<6;i++)
+    {
+        for(int y=0;y<3;y++)
+        {
+            ImagePictures[i][y]=new Graphics::TBitmap;
+            AnsiString name="Image"+String(y);
+            ImagePictures[i][y]->Handle=LoadBitmap(GRAPHRES_LOCATION,name.c_str());
+            SetBkMode(ImagePictures[i][y]->Canvas->Handle,TRANSPARENT);
+            if(y==0)
+                ImagePictures[i][y]->Canvas->Font->Color=clWhite;
+            else
+                ImagePictures[i][y]->Canvas->Font->Color=clYellow;
+
+            AnsiString str;
+
+            switch(i)
+            {
+                case 0: str="Новая игра";       break;
+                case 1: str="Временно не работает ^_^";        break;
+                //case 1: str="Ыыыыыыыыыыыыыыы";        break;
+                case 2: str="Рекорды";          break;
+                case 3: str="Управление";       break;
+                case 4: str="Разработчики";     break;
+                case 5: str="Выход";            break;
+            }
+
+            int X,Y;
+            X=(ImagePictures[i][y]->Width-str.Length()*6)/2;
+            Y=(ImagePictures[i][y]->Height-ImagePictures[i][y]->Canvas->Font->Size)/2;
+            ImagePictures[i][y]->Canvas->TextOutA(X,Y,str);
+        }
+
+        Graphics::TBitmap* Temp=new Graphics::TBitmap;
+        Temp->Assign(ImagePictures[i][0]);
+        Temp->Width=256;
+        Temp->Height=128;
+        for(int z=0;z<3;z++)
+            Temp->Canvas->Draw(0,36*z,ImagePictures[i][z]);
+        AnsiString TexName=TempFolder+"TempBmp"+String(i)+".bmp";
+        Temp->PixelFormat=pf24bit;
+        Temp->SaveToFile(TexName);
+        Temp->Free();
+    }
+
+    Stream->Free();
+
+
+    FindFile=FileExists(ExeDir+"laser.ini");
+    if(FindFile)
+    {
+        TIniFile* Ini=new TIniFile(ExeDir+"laser.ini");
+        LaserParam.TexturePath=Ini->ReadString("main","TexturePath","");
+        LaserParam.DeltaX=Ini->ReadInteger("main","LaserLeftDelta",0);
+        LaserParam.DeltaY=Ini->ReadInteger("main","LaserTopDelta",0);
+        LaserParam.ScalingX=Ini->ReadFloat("main","LaserScalingX",0);
+        LaserParam.ScalingY=Ini->ReadFloat("main","LaserScalingY",0);
+
+        if(LaserParam.TexturePath=="")
+        {
+            PostQuitMessage(0);
+            return;
+        }
+    }
+
+
+}
+//---------------------------------------------------------------------------
+void __fastcall TestSystem()
+{
+}
+//---------------------------------------------------------------------------
+void __fastcall SystemCrash(AnsiString CrashName,AnsiString CrashCaption,int Flags)
+{
+    TStringList* sList=new TStringList;
+    AnsiString CurrentDateTime=GetCurrentDateTime();
+
+    sList->Add("Game end with error message:");
+    sList->Add("<"+CrashName+">");
+    sList->Add("If this message appears again, send this file to the developers.");
+    sList->Add("And become HAPPY! :)");
+
+    sList->SaveToFile(ExeDir+CurrentDateTime+" crash.txt");
+    AnsiString CommandLine="notepad.exe "+CurrentDateTime+" crash.txt";
+    WinExec(CommandLine.c_str(),SW_SHOW);
+    PostQuitMessage(0);
+}
+//---------------------------------------------------------------------------
+void __fastcall ReDrawGameWindow()
+{
+D3DXMatrixScaling(&MainMatrix,GLOBAL_SCALING_FACTOR,GLOBAL_SCALING_FACTOR,1);
+MainDevice->SetTransform(D3DTS_WORLD,&MainMatrix);
+
+int i;
+D3DXMATRIXA16 Matrix;
+D3DXMatrixScaling(&Matrix,FON_SCALING,FON_SCALING,1);
+MainSprite->SetTransform(&Matrix);
+
+float Z=FON_SCALING;
+
+if(Fon_top<=3400)
+    MainSprite->Draw(Fon,&CRect(0,(3400-Fon_top)/Z,800/Z,(4000-Fon_top)/Z),NULL,NULL,FCOLOR);
+if(Fon_top>3400)
+    {
+    MainSprite->Draw(Fon,&CRect(0,0,800/Z,(4000-Fon_top)/Z),NULL,&CVector(0,(Fon_top-3400)/Z,0),FCOLOR);
+    MainSprite->Draw(Fon,&CRect(0,(7400-Fon_top)/Z,800/Z,4000/Z),NULL,&CVector(0,0,0),FCOLOR);
+    }
+
+MainSprite->SetTransform(&IdentityMatrix);
+
+for(i=0;i<150;i++)
+    if(RocketShleif[i][1]==1)
+        {
+        int h=(RocketShleif[i][4]-1)/2+1;
+        TRect Rect1=UpdateRect(DrawingRects[12],RocketShleif[i][2],RocketShleif[i][3]);
+        TRect Rect2=UpdateRect(DrawingRects[12],DrawingRects[12].Width()*h,0);
+        MainSprite->Draw(RocketShleifImages,&CRect(Rect2.left,Rect2.top,Rect2.right,Rect2.Bottom),NULL,
+        &CVector(Rect1.left,Rect1.top,0),FCOLOR);
+        }
+    MainSprite->End();
+    StarsManager->Draw();
+
+for(i=0;i<100;i++)
+  if(Lines[i][1]==1)
+    {
+    D3DCOLOR Col=D3DCOLOR_ARGB(255,200,200,255);
+    DrawLighting(Lines[i][2],Lines[i][3],Lines[i][4],Lines[i][5],Col);
+    DrawLighting(Lines[i][2],Lines[i][3],Lines[i][4],Lines[i][5],Col);
+    DrawLighting(Lines[i][2],Lines[i][3],Lines[i][4],Lines[i][5],Col);
+    Lines[i][1]=0;
+    }
+
+MainSprite->Begin(D3DXSPRITE_ALPHABLEND);
+MainDevice->SetTransform(D3DTS_WORLD,&MainMatrix);
+
+PlayerShotsManager->Draw();
+
+EnemyShotsManager->Draw();
+
+EnemiesManager.Draw();
+
+for(i=0;i<100;i++)
+  if(RangerWeaponEffects[i][1]==1)
+    {
+    int Z=WEFFECT_SCALING;
+    D3DXMatrixScaling(&Matrix,Z,Z,1);
+    MainSprite->SetTransform(&Matrix);
+
+    int Count=RangerWeaponEffects[i][4]/2;
+    TRect Rect1,Rect2;
+    Rect1=UpdateRect(DrawingRects[13],RangerWeaponEffects[i][2]/Z,RangerWeaponEffects[i][3]/Z);
+    Rect2=UpdateRect(DrawingRects[13],199*Count/2,0);   //199, а не DrawingRects[13].Width() потому,
+    // что первичная ширина была 199 и она не делится на 2
+
+    MainSprite->Draw(Weapon1Effect,&CRect(Rect2.left,Rect2.top,Rect2.right,Rect2.bottom),NULL,
+    &CVector(Rect1.left,Rect1.top,0),FCOLOR);
+
+    RangerWeaponEffects[i][4]++;
+    if(RangerWeaponEffects[i][4]==RangerWeaponEffects[i][5])
+      RangerWeaponEffects[i][1]=0;
+
+    MainSprite->SetTransform(&IdentityMatrix);
+    }
+
+for(i=0;i<100;i++)
+    if(Artefacts[i][1]==1)
+        MainSprite->Draw(Artefact,NULL,NULL,&CVector(Artefacts[i][2],Artefacts[i][3],0),FCOLOR);
+
+if(Boss[1]==1)
+    {
+    MainSprite->Draw(BossI,NULL,NULL,&CVector(Boss[2],Boss[3],0),FCOLOR);
+
+    MainSprite->End();
+
+    D3DXVECTOR2 Vector[2];
+
+    MainLine->Begin();
+    MainDevice->SetTransform(D3DTS_WORLD,&MainMatrix);
+
+    if(Boss[5]>Boss[6]/2)
+    {
+        Vector[0].x=Boss[2];
+        Vector[0].y=(Boss[3]-10);
+        Vector[1].x=(Boss[2]+200);
+        Vector[1].y=(Boss[3]-10);
+        MainLine->Draw(Vector,2,D3DCOLOR_ARGB(255,0,255,0));
+
+        Vector[0]=Vector[1];
+        Vector[1].x=(Boss[2]+200.0*(Boss[5]-Boss[6]/2)/Boss[6]*2);
+        MainLine->Draw(Vector,2,D3DCOLOR_ARGB(255,255,0,0));
+    }
+    else
+    {
+        Vector[0].x=Boss[2];
+        Vector[0].y=(Boss[3]-10);
+        Vector[1].x=(Boss[2]+200.0*Boss[5]/15000);
+        Vector[1].y=(Boss[3]-10);
+        MainLine->Draw(Vector,2,D3DCOLOR_ARGB(255,255,0,0));
+    }
+
+    MainLine->End();
+
+    MainSprite->Begin(D3DXSPRITE_ALPHABLEND);
+    MainDevice->SetTransform(D3DTS_WORLD,&MainMatrix);
+    }
+
+for(i=0;i<200;i++)
+    if((Explodings[i][0]==1))
+    {
+        switch(Explodings[i][1])
+        {
+			case 1: MainSprite->Draw(Explo[Explodings[i][2]],NULL,NULL,
+					&CVector(Explodings[i][4],Explodings[i][5],0),FCOLOR);
+            break;
+            case 2:
+            {
+                int Z=EXPL_SCALING;
+
+                D3DXMatrixScaling(&Matrix,Z,Z,1);
+                MainSprite->SetTransform(&Matrix);
+
+                int Count=Explodings[i][2]/2;
+                TRect Rect1=UpdateRect(DrawingRects[6],(Explodings[i][4]-30)/Z,Explodings[i][5]/Z);
+                TRect Rect2=UpdateRect(DrawingRects[6],DrawingRects[6].Width()*Count,0);
+                MainSprite->Draw(CoolExploding1,&CRect(Rect2.left,Rect2.top,Rect2.right,Rect2.bottom),
+                NULL,&CVector(Rect1.left,Rect1.top,0),FCOLOR);
+
+                MainSprite->SetTransform(&IdentityMatrix);
+            }
+            break;
+            case 3:
+            {
+                int Z=EXPL_SCALING;
+
+                D3DXMatrixScaling(&Matrix,Z,Z,1);
+                MainSprite->SetTransform(&Matrix);
+
+                int Count=Explodings[i][2]/4;
+                TRect Rect1,Rect2;
+                Rect1=UpdateRect(DrawingRects[5],(Explodings[i][4]-30)/Z,Explodings[i][5]/Z);
+                Rect2=UpdateRect(DrawingRects[5],DrawingRects[5].Width()*Count,0);
+                MainSprite->Draw(CoolExploding2,&CRect(Rect2.left,Rect2.top,Rect2.right,Rect2.bottom),
+                NULL,&CVector(Rect1.left,Rect1.top,0),FCOLOR);
+
+                MainSprite->SetTransform(&IdentityMatrix);
+            }
+            break;
+        }
+        Explodings[i][2]+=1;
+        if(Explodings[i][2]>=Explodings[i][3])
+            Explodings[i][0]=0;
+    }
+if(Laser[1]==1)
+    {
+    if(!FindFile)
+        MainSprite->Draw(LaserImage,NULL,NULL,&CVector(PlayerManager.Player.xpos-100,PlayerManager.Player.ypos-550,0),FCOLOR);
+    if(FindFile)
+        {
+        D3DXMatrixScaling(&Matrix,LaserParam.ScalingX,LaserParam.ScalingY,1);
+        MainSprite->SetTransform(&Matrix);
+        MainSprite->Draw(LaserImage,NULL,NULL,&CVector((PlayerManager.Player.xpos-LaserParam.DeltaX)/LaserParam.ScalingX,
+                        (PlayerManager.Player.ypos-LaserParam.DeltaY)/LaserParam.ScalingY,0),FCOLOR);
+        MainSprite->SetTransform(&IdentityMatrix);
+        }
+    }
+
+
+for(i=0;i<100;i++)
+    if(Shleif[i][1]==1)
+        {
+        TRect Rect1=UpdateRect(DrawingRects[12],Shleif[i][2],Shleif[i][3]);
+        TRect Rect2=UpdateRect(DrawingRects[12],DrawingRects[12].Width()*(5-Shleif[i][4]/5),0);
+        MainSprite->Draw(RocketShleifImages,&CRect(Rect2.left,Rect2.top,Rect2.right,Rect2.Bottom),NULL,
+        &CVector(Rect1.left,Rect1.top,0),FCOLOR);
+        }
+
+    if(PlayerManager.Player.Visible)
+    {
+        PlayerManager.Draw();
+
+        if(Undamager)
+        {
+            D3DXMatrixRotationZ(&Matrix,random(360)*3.14/180);
+            Matrix=Translate(PlayerManager.Player.xpos+24,PlayerManager.Player.ypos+24,0,Matrix);
+            MainSprite->SetTransform(&Matrix);
+
+            if(UndamagerCoff>100)
+                MainSprite->Draw(UndamagerTexture,NULL,NULL,&CVector(-64,-64,0),FCOLOR);
+            else
+            {
+                int Alpha=UndamagerCoff*2.55;
+                MainSprite->Draw(UndamagerTexture,NULL,NULL,&CVector(-64,-64,0),D3DCOLOR_ARGB(Alpha,255,255,255));
+            }
+            for(i=0;i<10;i++)
+            {
+                int Angle=random(360);
+                int C=(UndamagerCoff>100)?255:UndamagerCoff*2.55;
+                D3DCOLOR Col=D3DCOLOR_ARGB(C,200,200,255);
+                int x1=PlayerManager.Player.xpos+24+40*cos(Angle*3.14/180);
+                int y1=PlayerManager.Player.ypos+24+40*sin(Angle*3.14/180);
+                int x2=PlayerManager.Player.xpos+24+15*cos(Angle*3.14/180);
+                int y2=PlayerManager.Player.ypos+24+15*sin(Angle*3.14/180);
+                DrawLighting(x1,y1,x2,y2,Col);
+            }
+            MainSprite->SetTransform(&IdentityMatrix);
+        }
+    }
+
+
+D3DCOLOR CurrColor=D3DCOLOR_XRGB(255,0,0);
+
+MainSprite->Draw(Panel,NULL,NULL,&CVector(0,575,0),FCOLOR);
+
+if(PlayerManager.Player.HP<=PlayerManager.Player.MaxHP/4)
+  {
+  MainSprite->Draw(WarningSpace,NULL,NULL,&CVector(416,578,0),FCOLOR);
+  CurrColor=D3DCOLOR_XRGB(255,255,0);
+  }
+
+AnsiString value;
+int pos;
+value=String((int)PlayerManager.Player.HP)+"/"+String((int)PlayerManager.Player.MaxHP);
+pos=465-(value.Length()*4);
+MainFont->DrawTextA(MainSprite,value.c_str(),-1,&CRect(pos,580,1000,1000),0,CurrColor);
+CurrColor=D3DCOLOR_XRGB(255,0,0);
+value=String((int)PlayerManager.Player.Experience);
+pos=585-(value.Length()*4);
+MainFont->DrawTextA(MainSprite,value.c_str(),-1,&CRect(pos,580,1000,1000),0,CurrColor);
+
+
+if(PlayerManager.Player.EnabledNewLifes)
+    {
+    if(PlayerManager.Player.Lifes<=9)
+        for(i=0;i<PlayerManager.Player.Lifes;i++)
+            MainSprite->Draw(SmallShip,NULL,NULL,&CVector(720-PlayerManager.Player.Lifes*7.5+15*i,580,0),FCOLOR);
+    else
+        {
+        MainSprite->Draw(SmallShip,NULL,NULL,&CVector(720,581,0),FCOLOR);
+        MainFont->DrawTextA(MainSprite,String(PlayerManager.Player.Lifes).c_str(),-1,&CRect(720-String(PlayerManager.Player.Lifes).Length()*7,580,1000,1000),0,CurrColor);
+        }
+    }
+else
+    {
+    MainFont->DrawTextA(MainSprite,"Ещё не открыто.",-1,&CRect(680,580,1000,1000),0,CurrColor);
+    }
+
+if((PauseNow)&&(!RangerDeads))
+    MainFont->DrawTextA(MainSprite,"Пауза. Нажмите Pause для продолжения.",-1,&CRect(35,580,1000,1000),0,CurrColor);
+
+CornerTextManager.DrawTextEx(5);
+
+int FPS=FPSShower.GetFPS();
+
+if((FPS!=0)&&(NeedShowFPS))
+  MainFont->DrawTextA(MainSprite,(String(FPS)+" fps").c_str(),-1,&CRect(370,20,1000,1000),0,D3DCOLOR_XRGB(255,0,0));
+
+
+    switch(ArtPanelState)
+    {
+        case ARTPANEL_HIDDEN:                           break;
+        case ARTPANEL_SHOWING:  ShowArtefactPanel();    break;
+        case ARTPANEL_VISIBLE:  DrawArtefactPanel();    break;
+        case ARTPANEL_HIDING:   HideArtefactPanel();    break;
+    }
+
+    MessageBoxManager.Update();
+
+if(PlayerStatistic.ShowStatistic)
+  {
+  CurrColor=D3DCOLOR_XRGB(100,100,255);
+
+  AnsiString Sz;
+  Sz="Штипов убито "+String(PlayerStatistic.KilledShtips);
+  SlaveFont->DrawTextA(MainSprite,Sz.c_str(),-1,&CRect(700,0,800,600),0,CurrColor);
+  Sz="Меноков убито "+String(PlayerStatistic.KilledMenoks);
+  SlaveFont->DrawTextA(MainSprite,Sz.c_str(),-1,&CRect(700,10,800,600),0,CurrColor);
+  Sz="Смершей убито "+String(PlayerStatistic.KilledSmershes);
+  SlaveFont->DrawTextA(MainSprite,Sz.c_str(),-1,&CRect(700,20,800,600),0,CurrColor);
+  Sz="Ургантов убито "+String(PlayerStatistic.KilledUrgants);
+  SlaveFont->DrawTextA(MainSprite,Sz.c_str(),-1,&CRect(700,30,800,600),0,CurrColor);
+  Sz="Эквенторов убито "+String(PlayerStatistic.KilledEcventors);
+  SlaveFont->DrawTextA(MainSprite,Sz.c_str(),-1,&CRect(700,40,800,600),0,CurrColor);
+  Sz="Выстрелов сделано "+String(PlayerStatistic.ShotsFired);
+  SlaveFont->DrawTextA(MainSprite,Sz.c_str(),-1,&CRect(700,60,800,600),0,CurrColor);
+  Sz="Выстрелов попало "+String(PlayerStatistic.ShotsHit);
+  SlaveFont->DrawTextA(MainSprite,Sz.c_str(),-1,&CRect(700,70,800,600),0,CurrColor);
+
+  if(PlayerStatistic.ShotsFired!=0)
+    Sz="Меткость "+String(PlayerStatistic.ShotsHit*100/PlayerStatistic.ShotsFired)+"%";
+  else
+    Sz="Меткость 0%";
+  SlaveFont->DrawTextA(MainSprite,Sz.c_str(),-1,&CRect(700,80,800,600),0,CurrColor);
+
+  int GameTime=PlayerStatistic.GameTime;
+  Sz="Время игры "+String(GameTime/3600)+":"+String(GameTime%3600/60)+":"+String(GameTime%60);
+  SlaveFont->DrawTextA(MainSprite,Sz.c_str(),-1,&CRect(700,100,800,600),0,CurrColor);
+  }
+//--------------------Current end of last code------------------------
+    NumberShower.Draw();
+}
+//---------------------------------------------------------------------------
+void __fastcall ActivateCheat(int Cheat)
+{
+    switch(Cheat)
+    {
+        case 1: PlayerManager.PlayerParameters[7]+=1000;     break;
+        case 2: PlayerManager.Player.Experience+=50000;      break;
+        case 4: PlayerManager.Player.Lifes+=5;               break;
+        case 3:
+        {
+            for(int i=0;i<11;i++)
+                RangerArtefacts[i]=1;
+            PlayerManager.RebuildParameters();
+        }
+        break;
+    }
+}
+//---------------------------------------------------------------------------
+void __fastcall TestForCrash()
+{
+    TRect SecondShip=PlayerManager.GetPlayerRect();
+    if(!Undamager)
+    {
+        for(int v=0;v<5;v++)
+            for (int i=0;i<25;i++)
+                if(EnemiesManager.Enemies[v][i].Exists)
+                {
+                    TRect FirstShip=EnemiesManager.GetEnemyRect(v+1,i);
+                    if(TestRects(FirstShip,SecondShip))
+                    {
+                        int Damage=EnemiesManager.Enemies[v][i].HP;
+                        EnemiesManager.Enemies[v][i].HP-=PlayerManager.Player.HP;
+                        if(EnemiesManager.Enemies[v][i].HP<=0)
+                        {
+                            MusicManager.OpenAndPlayEx(TempFolder+"sound//expl0.wav",10,59,false);
+                            EnemiesManager.EnemyDead(v+1,i);
+                        }
+                        PlayerManager.Player.HP-=Damage*2;
+                        if(PlayerManager.Player.HP<=0)
+                            PlayerManager.PlayerDead();
+                    }
+                }
+
+        if(Boss[1]==1)
+        {
+            TRect FirstShip=UpdateRect(Rects[9],Boss[2],Boss[3]);
+            if(TestRects(FirstShip,SecondShip))
+            {
+                PlayerManager.PlayerDead();
+                PlayerManager.Player.xpos=375;
+                PlayerManager.Player.ypos=650;
+            }
+        }
+    }
+}
+//---------------------------------------------------------------------------
+void __fastcall MoveShleif()
+{
+    for(int i=0;i<100;i++)
+        if(Shleif[i][1]==1)
+        {
+            Shleif[i][3]+=4;
+            Shleif[i][4]+=3;
+            if(Shleif[i][4]>=Shleif[i][5])
+                Shleif[i][1]=0;
+        }
+}
+//---------------------------------------------------------------------------
+void __fastcall MoveRocketShleif()
+{
+    for(int j=0;j<150;j++)
+        if(RocketShleif[j][1]==1)
+        {
+            RocketShleif[j][4]-=1;
+            if(RocketShleif[j][4]==0)
+                RocketShleif[j][1]=0;
+        }
+}
+//---------------------------------------------------------------------------
+void __fastcall PlayerShipFire(int WeaponType,int WeaponLevel,bool SecondWeapon)
+{
+    TPoint ppos=PlayerManager.GetPlayerPos();
+    double pp6=PlayerManager.PlayerParameters[6];
+    double pp4=PlayerManager.PlayerParameters[4];
+    PlayerShotsManager->Add(ppos,WeaponType*10+SecondWeapon+1,WeaponLevel,pp4,pp6);
+}
+//---------------------------------------------------------------------------
+
+void __fastcall DrawMainMenu()
+{
+    D3DXMatrixScaling(&MainMatrix,GLOBAL_SCALING_FACTOR,GLOBAL_SCALING_FACTOR,1);
+    MainDevice->SetTransform(D3DTS_WORLD,&MainMatrix);
+
+    int i;
+    D3DXMATRIXA16 Matr;
+    D3DXMatrixScaling(&Matr,FON_SCALING,FON_SCALING,1);
+    MainSprite->SetTransform(&Matr);
+
+    float Z=FON_SCALING;
+
+    if(Fon_top<=3400)
+        MainSprite->Draw(Fon,&CRect(0,(3400-Fon_top)/Z,800/Z,(4000-Fon_top)/Z),NULL,NULL,FCOLOR);
+    if(Fon_top>3400)
+    {
+        MainSprite->Draw(Fon,&CRect(0,0,800/Z,(4000-Fon_top)/Z),NULL,&CVector(0,(Fon_top-3400)/Z,0),FCOLOR);
+        MainSprite->Draw(Fon,&CRect(0,(7400-Fon_top)/Z,800/Z,4000/Z),NULL,&CVector(0,0,0),FCOLOR);
+    }
+
+    MainSprite->SetTransform(&IdentityMatrix);
+    PlayerShotsManager->Draw();
+
+    MainSprite->End();
+    StarsManager->Draw();
+    MainSprite->Begin(D3DXSPRITE_ALPHABLEND);
+    MainDevice->SetTransform(D3DTS_WORLD,&MainMatrix);
+
+    EnemyShotsManager->Draw();
+    EnemiesManager.Draw();
+
+    for(i=0;i<100;i++)
+        if(Shleif[i][1]==1)
+        {
+            TRect Rect1=UpdateRect(DrawingRects[12],Shleif[i][2],Shleif[i][3]);
+            TRect Rect2=UpdateRect(DrawingRects[12],DrawingRects[12].Width()*(5-Shleif[i][4]/5),0);
+
+            MainSprite->Draw(RocketShleifImages,&CRect(Rect2.left,Rect2.top,Rect2.right,Rect2.Bottom),NULL,
+            &CVector(Rect1.left,Rect1.top,0),FCOLOR);
+        }
+
+    PlayerManager.Draw();
+
+    for(i=0;i<200;i++)
+        if((Explodings[i][0]==1))
+        {
+			MainSprite->Draw(Explo[(Explodings[i][2])],NULL,NULL,&CVector(Explodings[i][4],Explodings[i][5],0),FCOLOR);
+            Explodings[i][2]+=1;
+            if(Explodings[i][2]>=Explodings[i][3])
+                Explodings[i][0]=0;
+        }
+
+    if(PanelButtons[0].Visible)
+    {
+        MainSprite->Draw(fuck,NULL,NULL,&CVector(800-224-40,100,0),FCOLOR);
+        for(i=0;i<6;i++)
+            MainSprite->Draw(PanelButtons[i].Texture,&PanelButtons[i].States[PanelButtons[i].CurrentState-1],
+            NULL,&CVector(PanelButtons[i].Position.left,PanelButtons[i].Position.top,0),FCOLOR);
+    }
+
+    MainSprite->Draw(GeneralFon,&CRect(0,0,43,600),NULL,&CVector(0,0,0),D3DCOLOR_ARGB(150,255,255,255));
+    MainSprite->Draw(GeneralFon,&CRect(43,0,715+43,43),NULL,&CVector(43,0,0),D3DCOLOR_ARGB(150,255,255,255));
+    MainSprite->Draw(GeneralFon,&CRect(758,0,42+758,600),NULL,&CVector(758,0,0),D3DCOLOR_ARGB(150,255,255,255));
+    MainSprite->Draw(GeneralFon,&CRect(43,558,715+43,42+558),NULL,&CVector(43,558,0),D3DCOLOR_ARGB(150,255,255,255));
+
+    MainSprite->Draw(RangersLogo,NULL,NULL,&CVector(505,10,0),FCOLOR);
+
+    int FPS=FPSShower.GetFPS();
+    if((FPS!=0)&&(NeedShowFPS))
+        MainFont->DrawTextA(MainSprite,(String(FPS)+" fps").c_str(),-1,&CRect(370,20,1000,1000),0,D3DCOLOR_XRGB(255,0,0));
+}
+//---------------------------------------------------------------------------
+void __fastcall UpdateGameOverNewScore()
+{
+
+    PlayerManager.Player.MaxHP=100+PlayerManager.Player.Experience/25;
+
+    PlayerManager.Player.DroidRepair=PlayerManager.Player.Experience/2000+1;
+    if(PlayerManager.Player.DroidRepair>10)
+		PlayerManager.Player.DroidRepair=10;
+
+	EnemiesManager.EnemySetMax(2,min(PlayerManager.Player.Experience/500,20));
+	EnemiesManager.EnemySetMax(3,min(PlayerManager.Player.Experience/2000,10));
+	EnemiesManager.EnemySetMax(4,min(PlayerManager.Player.Experience/3000,4));
+	EnemiesManager.EnemySetMax(5,min(PlayerManager.Player.Experience/5000,2));
+
+    if((PlayerManager.Player.Experience>=50000)&&Boss[1]==0)
+    {
+        Boss[1]=1;
+        Boss[2]=300;
+        Boss[3]=-200;
+        Boss[4]=2;
+        Boss[5]=30000;
+        Boss[6]=30000;
+        Boss[7]=25;
+        Boss[8]=50;
+
+        PlaylistManager.Init(BossBattleMusicPlaylist,GameConfig.boss_battle_music_change_shuffle);
+
+        MusicManager.OpenFileEx(PlaylistManager.GetNext(),MusicID);
+        MusicManager.PlayFile(MusicID);
+    }
+    PlayerManager.PlayerParameters[10]=PlayerManager.Player.Experience/1000;
+    if(PlayerManager.PlayerParameters[10]>=15)
+        PlayerManager.PlayerParameters[10]=15;
+
+    PlayerManager.PlayerParameters[11]=PlayerManager.Player.Experience/500;
+    if(PlayerManager.PlayerParameters[11]>=40)
+        PlayerManager.PlayerParameters[11]=40;
+}
+//---------------------------------------------------------------------------
+void __fastcall MoveArtefacts()
+{
+    int i;
+    for(i=0;i<100;i++)
+        if(Artefacts[i][1]==1)
+        {
+            Artefacts[i][3]+=2;
+            if(Artefacts[i][3]>=600)
+                Artefacts[i][1]=0;
+        }
+}
+//---------------------------------------------------------------------------
+
+void __fastcall DrawLighting(int X1,int Y1,int X2,int Y2,D3DCOLOR Color)
+{
+    int LHeight=abs(Y2-Y1);
+    int LWidth=abs(X2-X1);
+
+    D3DXVECTOR2 Vector[7];
+
+    Vector[0].x=X1;
+    Vector[0].y=Y1;
+
+    for(int i=1;i<6;i++)
+    {
+        Vector[i].x=(X1+(X2-X1)/6*i+random(10+LWidth/25)-5-LWidth/50);
+        Vector[i].y=(Y1+(Y2-Y1)/6*i+random(10+LHeight/25)-5-LHeight/50);
+    }
+    Vector[6].x=X2;
+    Vector[6].y=Y2;
+
+    MainLine->Begin();
+    MainDevice->SetTransform(D3DTS_WORLD,&MainMatrix);
+    MainLine->Draw(Vector,7,Color);
+    MainLine->End();
+}
+//---------------------------------------------------------------------------
+void __fastcall FirstWeaponShieldExplode(int X,int Y,int Power)
+{
+    int i,b,x,y;
+    for(i=0;i<5;i++)
+        for(b=0;b<25;b++)
+            if(EnemiesManager.Enemies[i][b].Exists)
+            {
+                x=EnemiesManager.Enemies[i][b].xpos-X;
+                y=EnemiesManager.Enemies[i][b].ypos-Y;
+                if(y*y+x*x<100*100)
+                    EnemiesManager.Enemies[i][b].HP-=Power;
+                if(EnemiesManager.Enemies[i][b].HP<0)
+                    EnemiesManager.EnemyDead(i+1,b);
+            }
+
+    i=0;
+    while(RangerWeaponEffects[i][1]!=0)
+        i++;
+
+    RangerWeaponEffects[i][1]=1;
+    RangerWeaponEffects[i][2]=X-100;
+    RangerWeaponEffects[i][3]=Y-100;
+    RangerWeaponEffects[i][4]=0;
+    RangerWeaponEffects[i][5]=40;
+}
+
+//---------------------------------------------------------------------------
+void __fastcall SaveGame(AnsiString SaveName,int SaveType)
+{
+    int i,b,c;
+    AnsiString FullName;
+    TFileStream* SaveFile;
+
+    switch(SaveType)
+    {
+        case 1:
+        {
+            if(!DirectoryExists("Saves"))
+                CreateDirectory("Saves",NULL);
+            SaveFile=new TFileStream(CurFolder+"Saves//"+SaveName+".rsf",fmCreate);
+        }
+        break;
+        case 2: SaveFile=new TFileStream(SaveName+".rsf",fmCreate);  break;
+    }
+
+    SetCurrentDir(CurFolder);
+
+    // Read comments in LoadGame()
+
+    EnemiesManager.Save(SaveFile);
+
+    SaveFile->Free();
+}
+//---------------------------------------------------------------------------
+void __fastcall LoadGame(AnsiString SaveName,int LoadType)
+{
+    int i,b,c;
+
+    TFileStream* SaveFile;
+
+    try
+    {
+        switch(LoadType)
+        {
+            case 1: SaveFile=new TFileStream(CurFolder+"Saves//"+SaveName+".rsf",fmOpenReadWrite);     break;
+            case 2: SaveFile=new TFileStream(SaveName,fmOpenReadWrite);                                break;
+        }
+    }
+    catch(...)
+    {
+        MessageBox(hWnd,"Gg","Save isn't exists.",MB_OK+MB_ICONERROR);
+        return;
+    }
+    SetCurrentDir(CurFolder);
+
+
+    //This all need to edition. Below I'll place new code.
+    //It need edition, so I'll edit it later
+
+    EnemiesManager.Load(SaveFile);
+
+    SaveFile->Free();
+}
+//---------------------------------------------------------------------------
+void __fastcall ReorderScore()
+{
+    int CurrentScore,CurrentNumber,a,b;
+    AnsiString CurrentName;
+
+    for(a=0;a<ScoreList->Count;a++)
+    {
+        CurrentScore=StrToInt(ScoreList->Strings[a]);
+        CurrentNumber=a;
+
+        for(b=a;b<ScoreList->Count;b++)
+            if(StrToInt(ScoreList->Strings[b])>CurrentScore)
+                CurrentNumber=b;
+
+        ScoreList->Strings[a]=ScoreList->Strings[CurrentNumber];
+        ScoreList->Strings[CurrentNumber]=String(CurrentScore);
+
+        CurrentName=NameList->Strings[a];
+        NameList->Strings[a]=NameList->Strings[CurrentNumber];
+        NameList->Strings[CurrentNumber]=CurrentName;
+    }
+}
+//---------------------------------------------------------------------------
+void __fastcall SetUpMenu()
+{
+    EnemiesManager.EnemySeries=random(3);
+
+    int i;
+
+    for(i=0;i<6;i++)
+        PanelButtons[i].Visible=true;
+
+    for(i=0;i<100;i++)
+    {
+        Shleif[i][0]=0;
+        Shleif[i][1]=0;
+        Shleif[i][2]=0;
+    }
+
+    for(i=0;i<100;i++)
+    {
+        Artefacts[i][1]=0;
+        Artefacts[i][2]=0;
+        Artefacts[i][3]=0;
+    }
+
+    for(i=0;i<100;i++)
+    {
+        Explodings[i][1]=0;
+        Explodings[i][2]=0;
+        Explodings[i][3]=0;
+    }
+
+    PlayerManager.Player.xpos=350;
+    PlayerManager.Player.ypos=500;
+    PlayerManager.Player.HP=1000000;
+    PlayerManager.Player.MaxHP=1000000;
+    PlayerManager.Player.WeaponPower=1;
+    PlayerManager.Player.LeftSpeed=0;
+    PlayerManager.Player.RightSpeed=0;
+    PlayerManager.Player.TopSpeed=0;
+    PlayerManager.Player.BottomSpeed=0;
+    PlayerManager.Player.CurrentWeapon=1;
+    PlayerManager.Player.Visible=true;
+
+    Fire=false;
+    FireAlt=false;
+
+    for(int i=1;i<=5;i++)
+        EnemiesManager.EnemySetMax(i,0);
+    Boss[1]=0;
+
+    EnemyShotsManager->Clear();
+
+    PlayerShotsManager->Clear();
+
+    EnemiesManager.EnemySetMax(1,25);
+    for(int i=0;i<25;i++)
+    {
+        EnemiesManager.Enemies[0][i].ypos-=random(1000)-400;
+    }
+
+
+    StarsManager->Set();
+
+    try
+    {
+        PlaylistManager.Init(MainMenuMusicPlaylist,GameConfig.main_menu_music_change_shuffle);
+
+        AnsiString FileName=PlaylistManager.GetNext();
+        if(MusicManager.Songs[MusicID].FileName!=FileName)
+            {
+            MusicManager.OpenFileEx(PlaylistManager.GetNext(),MusicID);
+            MusicManager.PlayFile(MusicID);
+            }
+        if(!MusicManager.Songs[MusicID].Playing)
+            MusicManager.PlayFile(MusicID);
+    }
+    catch(...)
+    {
+        SystemCrash("Проблемы при открытии "+ExtractFileName(MusicManager.Songs[MusicID].FileName)+". Возможно, причина является в отсутствии такового, неправильно настроенном звуковом оборудовании или кодеков.","Не могу запустить "+ExtractFileName(MusicManager.Songs[MusicID].FileName)+".",MB_OK+MB_ICONERROR);
+        return;
+    }
+
+    Undamager=false;
+    AlreadyLoad=true;
+    StartTimers(true);
+}
+//---------------------------------------------------------------------------
+void __fastcall StartTimers(bool Start)
+{
+    TimerManager->SetStatus(AIT,Start);
+    TimerManager->SetStatus(AIPath,Start);
+}
+//---------------------------------------------------------------------------
+void __fastcall DevelopersButton()
+{
+    StartTimers(false);
+    MainFont->Release();
+    D3DXCreateFont(MainDevice, 28, 0, FW_DONTCARE, 1, FALSE, DEFAULT_CHARSET,
+               OUT_DEFAULT_PRECIS, 1, DEFAULT_PITCH | FF_DONTCARE,
+               "Comic Sans MS", &MainFont);
+    for(int i=0;i<6;i++)
+        PanelButtons[i].Visible=false;
+    GameState=GS_AUTHORSMENU;
+    DevVar=0;
+    AuthorsTemp=0;
+}
+//---------------------------------------------------------------------------
+void __fastcall ControlsButton()
+{
+    StartTimers(false);
+
+    MainFont->Release();
+    D3DXCreateFont(MainDevice,24*GLOBAL_SCALING_FACTOR,0,FW_DONTCARE,1,false,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,1,
+    DEFAULT_PITCH| FF_DONTCARE,"Comic Sans MS",&MainFont);
+
+    for(int i=0;i<6;i++)
+        PanelButtons[i].Visible=false;
+    GameState=GS_CONTROLSMENU;
+}
+//---------------------------------------------------------------------------
+void __fastcall RecordButton()
+{
+    StartTimers(false);
+    for(int i=0;i<6;i++)
+        PanelButtons[i].Visible=false;
+
+    MainFont->Release();
+    D3DXCreateFont(MainDevice, 30*GLOBAL_SCALING_FACTOR, 0, FW_DONTCARE, 1, FALSE, DEFAULT_CHARSET,
+                         OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE,
+                         "Comic Sans MS", &MainFont );
+
+    GameState=GS_RECORDSMENU;
+}
+//---------------------------------------------------------------------------
+TPoint __fastcall SetNewCource()
+{
+    int ShipPosition[10][100][3];
+    int i,x,z,y;
+    int NewRangerX[10],NewRangerY[10];
+
+    for(i=0;i<10;i++)
+        for(x=0;x<30;x++)
+            {
+                ShipPosition[i][x][2]=EnemiesManager.Enemies[0][x].ypos+18*(i+1);
+                ShipPosition[i][x][1]=EnemiesManager.Enemies[0][x].xpos;
+            }
+
+    for(x=0;x<20;x++)
+        for(i=0;i<21;i++)
+        {
+            for(y=1;y<11;y++)
+            {
+                int X,Y;
+
+                if((i/2)*2==i) X=i/2; else X=-((i+1)/2);
+                if(x>10)Y=10-x; else Y=x;
+
+                NewRangerX[y-1]=PlayerManager.Player.xpos+y*X;
+                NewRangerY[y-1]=PlayerManager.Player.ypos+y*Y;
+            }
+
+            bool result=true;
+
+            for(y=0;y<10;y++)
+            {
+                if((NewRangerX[y]<50)||(NewRangerX[y]>850))
+                    result=false;
+
+                if((NewRangerY[y]<50)||(NewRangerY[y]>550))
+                    result=false;
+
+                for(z=0;z<30;z++)
+                    if(TestRects(Rect(NewRangerX[y]+5,NewRangerY[y]+5,NewRangerX[y]+45,NewRangerY[y]+55),Rect(ShipPosition[y][z][1],ShipPosition[y][z][2],ShipPosition[y][z][1]+16,ShipPosition[y][z][2]+32)))
+                        result=false;
+            }
+            if(result==true)
+            {
+                TPoint a;
+                a.x=NewRangerX[9];
+                a.y=NewRangerY[9];
+
+                int PPos=PlayerManager.Player.xpos;
+
+                if(NewRangerX[9]==PPos)
+                {
+                    int q;
+                    if(PlayerManager.Player.ypos>400) a.y-=25;
+                    if(PlayerManager.Player.xpos>400) a.x=PlayerManager.Player.xpos-50;
+                    if(PlayerManager.Player.xpos<350) a.x=PlayerManager.Player.xpos+50;
+
+                    if((PlayerManager.Player.xpos>=350)&&(PlayerManager.Player.xpos<=400))
+                        if(random(3)==0)
+                        {
+                            a.x=PlayerManager.Player.xpos+(random(3)-1)*(random(30)+20);
+                            a.y=PlayerManager.Player.ypos+random(30);
+                        }
+                }
+
+                return a;
+            }
+        }
+
+    TPoint a;
+    a.x=PlayerManager.Player.xpos;
+    a.y=PlayerManager.Player.ypos;
+
+    return a;
+}
+//---------------------------------------------------------------------------
+void __fastcall ShowArtefactPanel()
+{
+    MainSprite->Draw(ArtPanel,NULL,NULL,&CVector(ArtefactPanelPos,0,0),FCOLOR);
+    ArtefactPanelPos+=4;
+    if(ArtefactPanelPos>=4)
+    {
+        GameCheckListBox.Visible=true;
+        GameCheckListBox.ItemCount=0;
+        stringlist->Clear();
+        GameCheckListBox.Position=CRect(50,43,1000,1000);
+        for(int i=0;i<11;i++)
+            if(RangerArtefacts[i]!=0)
+            {
+                GameCheckListBox.ItemCount++;
+                GameCheckListBox.Items[GameCheckListBox.ItemCount-1].Name=strlist[i];
+                if(RangerArtefacts[i]==1)
+                    GameCheckListBox.Items[GameCheckListBox.ItemCount-1].Checked=true;
+                else
+                    GameCheckListBox.Items[GameCheckListBox.ItemCount-1].Checked=false;
+                stringlist->Add(IntToStr(i));
+            }
+        ArtPanelState=ARTPANEL_VISIBLE;
+        if(GameCheckListBox.ItemCount>0)
+            GameCheckListBox.CheckedItemNumber=0;
+        else
+            GameCheckListBox.CheckedItemNumber=-1;
+    }
+}
+//---------------------------------------------------------------------------
+void __fastcall HideArtefactPanel()
+{
+    MainSprite->Draw(ArtPanel,NULL,NULL,&CVector(ArtefactPanelPos,0,0),FCOLOR);
+    ArtefactPanelPos-=4;
+    if(ArtefactPanelPos==-200)
+    {
+        ArtPanelState=ARTPANEL_HIDDEN;
+        Pause(0);
+        PlayerManager.RebuildParameters();
+    }
+}
+//---------------------------------------------------------------------------
+void __fastcall StartBriefing(int Number)
+{
+    int w;
+    scanf("%d\n",&w);
+    char s[250];
+    gets(s);
+    BriefingList->Clear();
+    while(s[0]!='#')
+    {
+        BriefingList->Add(s);
+        gets(s);
+    }
+
+
+
+//    BriefingList->LoadFromFile("Data/Briefing_Demo.txt");
+    BriefingSpeed=1;
+    Briefinga=1;
+    GameState=GS_BRIEFINGMENU;
+
+    MainFont->Release();
+    D3DXCreateFont(MainDevice,16, 0, FW_DONTCARE, 1, FALSE, DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,
+    DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "Trebuchet MS", &MainFont);
+
+    ButtonsManager.ChangeVisible(GB_BRIEFING,true);
+}
+//---------------------------------------------------------------------------
+void __fastcall SaveScore()
+{
+    int i,a,b,c,d;
+    a=ScoreList->Count;
+    d=a-1;
+    b=PlayerManager.Player.Experience;
+    if(a!=0)
+    {
+        if(StrToInt(ScoreList->Strings[a-1])>=b)
+            if(ScoreList->Count<10)
+            {
+                ScoreList->Add(String(b));
+                ListItemNumber=a;
+                NameList->Add("");
+            }
+            else
+            {
+                ScoreList->Strings[9]=String(b);
+                ListItemNumber=9;
+                NameList->Strings[9]="";
+            }
+
+        if(StrToInt(ScoreList->Strings[d])<b)
+        {
+            while((StrToInt(ScoreList->Strings[d])<b)&&(d>0))
+                d-=1;
+
+            if(StrToInt(ScoreList->Strings[0])<b)
+                d=-1;
+
+            ScoreList->Insert(d+1,String(b));
+            NameList->Insert(d+1,"");
+            ListItemNumber=d+1;
+        }
+    }
+    else
+    {
+        ScoreList->Add(String(b));
+        NameList->Add("");
+        ListItemNumber=0;
+    }
+    RecordButton();
+    TextLeft=270;
+    TextTop=100+35*ListItemNumber;
+    if(ListItemNumber==9)
+        TextLeft+=10;
+    GrabbedText="NoName";
+    GrabbingText=true;
+}
+//---------------------------------------------------------------------------
+void __fastcall HideArtefacts()
+{
+    ArtPanelState=3;
+    GameCheckListBox.Visible=false;
+}
+//---------------------------------------------------------------------------
+void __fastcall ShowArtefacts()
+{
+    ArtPanelState=1;
+    Pause(1);
+    ArtefactPanel=true;
+    ArtefactPanelPos=-200;
+}
+//---------------------------------------------------------------------------
+void __fastcall ShipShleif(int X,int Y)
+{
+    int i;
+    int l;
+    for(int k=0;k<2;k++)
+        for(int f=0;f<4;f++)
+        {
+            i=0;
+            while(Shleif[i][1]!=0)
+            i++;
+            Shleif[i][1]=1;
+            Shleif[i][2]=X+19+f+8*k;
+            Shleif[i][3]=Y+52;
+            Shleif[i][4]=0;
+            if(k==0)
+                l=2-f;
+            else l=(1-f);
+            if (l<0)l=0-l;
+                Shleif[i][5]=10*(3-l)-random(10);
+        }
+}
+//---------------------------------------------------------------------------
+void __fastcall SuperWeapon()
+{
+    if(PlayerManager.PlayerParameters[7]>0)
+    {
+        PlayerManager.PlayerParameters[7]-=1;
+        for(int i=1;i<=5;i++)
+            for(int w=0;w<25;w++)
+                if(EnemiesManager.Enemies[i-1][w].Exists)
+                {
+                    EnemiesManager.Enemies[i-1][w].HP-=200;
+                    if(EnemiesManager.Enemies[i-1][w].HP<=0)
+                        EnemiesManager.EnemyDead(i,w);
+                }
+    }
+}
+//---------------------------------------------------------------------------
+void __fastcall NewArtefact(int X,int Y)
+{
+    int i=0;
+    while (Artefacts[i][1]!=0)
+        i++;
+    Artefacts[i][1]=1;
+    Artefacts[i][2]=X;
+    Artefacts[i][3]=Y;
+}
+//---------------------------------------------------------------------------
+void __fastcall StartLevel(int level)
+{
+    ButtonsManager.ChangeVisible(GB_BRIEFING,false);
+
+    EnemiesManager.EnemySeries=random(3);
+
+    FireInterval=1;
+    CurrentFonNumber=random(6)+1;
+
+    int Index=TextureManager.FindByTexture(&Fon);
+    if(Index>=0)
+        TextureManager.Free(Index);
+    AnsiString Nm="Fon"+String(CurrentFonNumber);
+    TextureManager.Create(Nm,false,&Fon);
+
+    try
+    {
+        PlaylistManager.Init(BattleMusicPlaylist,GameConfig.battle_music_change_shuffle);
+
+        MusicManager.OpenFileEx(PlaylistManager.GetNext(),MusicID);
+        MusicManager.PlayFile(MusicID);
+    }
+    catch(...)
+    {
+        SystemCrash("Не найден один из звуковых файлов. Проверьте правильность названий файлов: boy1.mp3, begin.mp3, scooter-fire.mp3. Также причиной неисправности может быть конфликтование с K-Lite Mega Codec Pack.","Не могу загрузить звук.",MB_OK+MB_ICONERROR);
+        return;
+    }
+
+
+    PlayerManager.Clear();
+
+
+    RangerDeads=false;
+    PauseNow=false;
+    AlreadyPressed=false;
+    Fire=false;
+    FireAlt=false;
+    PauseNow=false;
+    Undamager=false;
+
+    ArtefactPanel=false;
+
+    ArtefactPanelPos=-200;
+
+    GameState=GS_GAME;
+
+    PlayerManager.Player.xpos=370;
+    PlayerManager.Player.ypos=430;
+    PlayerManager.Player.Lifes=3;
+    PlayerManager.Player.Experience=0;
+    PlayerManager.Player.HP=100;
+    PlayerManager.Player.MaxHP=100;
+    PlayerManager.Player.WeaponPower=1;
+    PlayerManager.Player.LeftSpeed=0;
+    PlayerManager.Player.RightSpeed=0;
+    PlayerManager.Player.TopSpeed=0;
+    PlayerManager.Player.BottomSpeed=0;
+    PlayerManager.Player.CurrentWeapon=1;
+    PlayerManager.Player.Visible=true;
+
+    PlayerManager.Player.EnabledNewLifes=false;
+    double x[15]={0,1,0,0,0,0,1,0,1,1, 0, 0, 0, 0, 1};
+    memcpy(PlayerManager.PlayerParameters,x,sizeof(double)*15);
+
+    FireInterval=1;
+
+    PlayerManager.RangerWeapon[1][0][1]=1;
+    PlayerManager.RangerWeapon[1][1][1]=1;
+
+    PlayerManager.RangerWeapon[1][0][3]=25;
+    PlayerManager.RangerWeapon[1][1][3]=50;
+    PlayerManager.RangerWeapon[2][0][3]=30;
+    PlayerManager.RangerWeapon[2][1][3]=150;
+    PlayerManager.RangerWeapon[3][0][3]=3;
+    PlayerManager.RangerWeapon[3][1][3]=50;
+    PlayerManager.RangerWeapon[4][0][3]=40;
+    PlayerManager.RangerWeapon[4][1][3]=75;
+    PlayerManager.RangerWeapon[5][0][3]=100;
+    PlayerManager.RangerWeapon[5][1][3]=300;
+
+    for(int k=1;k<6;k++)
+        for(int h=0;h<2;h++)
+            PlayerManager.RangerWeapon[k][h][5]=PlayerManager.RangerWeapon[k][h][3];
+
+    TimerManager->SetStatus(T9,true);
+    TimerManager->SetStatus(T18,true);
+
+    TimerManager->SetStatus(DEAD_TIMER,false);
+
+    int i,c;
+
+    for(i=0;i<12;i++)
+        RangerArtefacts[i]=0;
+
+    for(c=0;c<5;c++)
+        for (i=0;i<25;i++)
+            EnemiesManager.Enemies[c][i].Exists=false;
+
+    Boss[1]=0;
+
+    for(i=0;i<100;i++)
+        Artefacts[i][1]=0;
+
+    PlayerShotsManager->Clear();
+
+    EnemyShotsManager->Clear();
+
+    for(i=0;i<100;i++)
+        Shleif[i][1]=0;
+
+    StarsManager->Set();
+
+    for(i=0;i<5;i++)
+    {
+        EnemiesManager.EnemySetMax(i+1,0);
+        if(i==0)
+            EnemiesManager.EnemySetMax(i+1,5);
+    }
+    for(i=0;i<200;i++)
+        Explodings[i][0]=0;
+
+    PlayerStatistic.Clear();
+    PlayerStatistic.ShowStatistic=false;
+
+    char s[250]="2";
+
+    while(s[0]!='#')
+        gets(s);
+
+	InitTriggers();
+}
+//---------------------------------------------------------------------------
+void __fastcall Exploding(int type,int X,int Y)
+{
+    int i=1;
+    while (Explodings[i][0]!=0)
+    {
+        i++;
+        if(i>200)
+            return;
+    }
+    Explodings[i][0]=1;
+    Explodings[i][1]=1;
+    Explodings[i][2]=1;
+    Explodings[i][3]=18;
+    Explodings[i][4]=X-10;
+    Explodings[i][5]=Y-10;
+    if(type==2)
+    {
+        Explodings[i][4]=X+5;
+        Explodings[i][1]=2;
+        Explodings[i][3]=44;
+    }
+    if(type==3)
+    {
+        Explodings[i][1]=3;
+        Explodings[i][3]=64;
+    }
+}
+//---------------------------------------------------------------------------
+void __fastcall Pause(int Type)
+{
+    if(Type==2)
+    {
+        PauseNow=!PauseNow;
+        TimerManager->SetStatus(T9,!PauseNow);
+        TimerManager->SetStatus(T18,!PauseNow);
+    }
+    else
+    {
+        PauseNow=Type;
+        TimerManager->SetStatus(T9,!Type);
+        TimerManager->SetStatus(T18,!Type);
+    }
+}
+void __fastcall KeyDown(int Key, LPARAM lParam)
+{
+    if((Key==BT_RIGHTBRACKET)||(Key==BT_LEFTBRACKET))
+    {
+        AnsiString FileName;
+        if(Key==BT_RIGHTBRACKET)
+            FileName=PlaylistManager.GetNext();
+        if(Key==BT_LEFTBRACKET)
+            FileName=PlaylistManager.GetPrevious();
+        if(MusicManager.Songs[MusicID].FileName!=FileName)
+            MusicManager.OpenFileEx(FileName,MusicID);
+        MusicManager.PlayFile(MusicID);
+    }
+
+
+    bool CanExit=true;
+    if((GameState==GS_GAME)&&(RangerDeads)&&(PlayerManager.Player.Lifes>=0)&&(PlayerManager.Player.EnabledNewLifes))
+        CanExit=false;
+    if(TimerManager->GetStatus(END_GAME_TIMER))
+        CanExit=false;
+
+    if((GrabbingText)&&((Key==BT_ESC)||(Key==BT_ENTER)))
+        ApplyRecord();
+
+    if(Key==BT_F)
+        NeedShowFPS=!NeedShowFPS;
+
+    if((GameState==GS_GAME)&&(!GrabbingText)&&(!RangerDeads)&&(!MessageNow))
+        GameKeyDown(Key,CanExit,lParam);
+
+    if((Key==BT_ESC)&&(GameState!=GS_MAINMENU)&&(CanExit)&&(!MessageNow))
+    {
+        if((GameState==GS_GAME)&&(Boss[1]<2)&&(PlayerManager.Player.Lifes>=0))
+        {
+            MessageBoxManager.AddMessageBox("Выйти в главное меню?!",IC_QUESTION+LIGHT_BLUE,2,MESSAGETYPE_QUIT);
+            return;
+        }
+        BackToMainMenu();
+        return;
+    }
+
+    if((Key==BT_ESC)&&(GameState==GS_MAINMENU))
+        PostQuitMessage(0);
+
+    if(GameState==GS_BRIEFINGMENU)
+        switch(Key)
+        {
+            case BT_NUMPLUS:       BriefingSpeed+=0.5;
+                if(BriefingSpeed>2) BriefingSpeed=2;            break;
+            case BT_NUMMINUS:       BriefingSpeed-=0.5;
+                if(BriefingSpeed<-2)BriefingSpeed=-2;           break;
+            case BT_UP:        BriefingScrollUp=true;              break;
+            case BT_DOWN:        BriefingScrollDown=true;            break;
+            case BT_ENTER:  BriefingButtonEvent();              break;
+            case BT_ESC: for(int i=0;i<6;i++)
+                                PanelButtons[i].Visible=true;
+                            StartTimers(true);
+                            GameState=GS_MAINMENU;
+                            ButtonsManager.ChangeVisible(GB_BRIEFING,false);
+                            break;
+        }
+
+    if(GrabbingText)
+        if(Key==8)
+            GrabbedText.Delete(GrabbedText.Length(),1);
+
+    if(MessageNow)
+        switch(Key)
+        {
+            case BT_ESC:
+                MessageButton2Event();
+            break;
+            case BT_ENTER:
+                MessageButton1Event();
+            break;
+        }
+}
+//---------------------------------------------------------------------------
+void __fastcall KeyUp(int Key, LPARAM lParam)
+{
+if(GameState==GS_GAME)
+  {
+  switch (Key)
+    {
+    case BT_LEFT: PlayerManager.Player.MovingLeft=false;      break;
+    case BT_UP: PlayerManager.Player.MovingUp=false;        break;
+    case BT_RIGHT: PlayerManager.Player.MovingRight=false;     break;
+    case BT_DOWN: PlayerManager.Player.MovingDown=false;      break;
+    case BT_CTRL: Fire=false;                   break;
+    case BT_ALT: FireAlt=false;                break;
+    }
+  }
+if(GameState==GS_BRIEFINGMENU)
+  {
+  switch(Key)
+    {
+    case BT_UP: BriefingScrollUp=false;       break;
+    case BT_DOWN: BriefingScrollDown=false;     break;
+    }
+  }
+}
+//---------------------------------------------------------------------------
+void __fastcall End_game_timer()
+{
+    if(Boss[1]==2)
+    {
+        for(int a=0;a<5;a++)
+            for(int b=0;b<25;b++)
+                if(EnemiesManager.Enemies[a][b].Exists)
+                {
+                    EnemiesManager.Enemies[a][b].Exists=false;
+                    EnemiesManager.EnemyDead(a+1,b);
+                }
+        SomeShit++;
+        if(SomeShit==1)
+             TimerManager->AddTimerEx(END_GAME_TIMER,1300,&End_game_timer,true);
+        if(SomeShit==2)
+        {
+            TimerManager->SetStatus(END_GAME_TIMER,false);
+            MessageBoxManager.AddMessageBox("Вы стали величайшим героем и спасли Галактику от доминаторов! ",IC_INFORMATION+LIGHT_BLUE,1,MESSAGETYPE_WINGAME);
+        }
+    }
+}
+//---------------------------------------------------------------------------
+void __fastcall DeadTimer()
+{
+    if((PlayerManager.Player.Lifes>=0)&&(PlayerManager.Player.EnabledNewLifes))
+    {
+        PlayerManager.Player.Visible=true;
+        RangerDeads=false;
+        Pause(0);
+        Undamager=true;
+        UndamagerCoff=300;
+        TimerManager->SetStatus(DEAD_TIMER,false);
+    }
+    if((PlayerManager.Player.Lifes<0)||(!PlayerManager.Player.EnabledNewLifes))
+    {
+        PlayerManager.Player.Lifes=-1;
+        if(SomeShit==1)
+        {
+            for(int a=0;a<5;a++)
+                for(int b=0;b<25;b++)
+                    if(EnemiesManager.Enemies[a][b].Exists)
+                    {
+                        EnemiesManager.Enemies[a][b].Exists=false;
+                        EnemiesManager.EnemyDead(a+1,b);
+                    }
+            TimerManager->AddTimerEx(DEAD_TIMER,1300,&DeadTimer,true);
+        }
+        if(SomeShit==2)
+        {
+            TimerManager->SetStatus(DEAD_TIMER,false);
+            MessageBoxManager.AddMessageBox("Вы не смогли убить Блазера и спасти галактику от доминаторов. ",LIGHT_RED+IC_ERROR,1,MESSAGETYPE_LOSEGAME);
+        }
+    }
+    SomeShit++;
+}
+//---------------------------------------------------------------------------
+void __fastcall MouseMove( WPARAM wParam, LPARAM lParam)
+{
+    int X=LOWORD(lParam);
+    int Y=HIWORD(lParam);
+    for(int i=0;i<6;i++)
+        if(PanelButtons[i].Visible)
+            if(TestForCursorPosition(&PanelButtons[i].Position,X,Y))
+            {
+                PanelButtons[i].CurrentState=2;
+            }
+            else
+                PanelButtons[i].CurrentState=1;
+
+    ButtonsManager.MouseMove(X,Y);
+
+    if((GameState==GS_GAME)&&(ControlingState==CS_MOUSE)&&(!ArtefactPanel))
+    {
+int x=SCREEN_WIDTH/2;
+  int y=SCREEN_HEIGHT/2;
+  double Length=pow(pow(x-X,2)+pow(y-Y,2),0.5);
+  if(Length>100)
+    {
+    TPoint Position;
+    Position.x=x+(X-x)*95.0/Length;
+    Position.y=y+(Y-y)*95.0/Length;
+    Mouse->CursorPos=Position;
+    }
+  PPos.x=X;
+  PPos.y=Y;
+  }
+}
+//---------------------------------------------------------------------------
+
+void __fastcall MouseDown( WPARAM wParam, LPARAM lParam, int Button)
+{
+    int X=LOWORD(lParam);
+    int Y=HIWORD(lParam);
+    if((GameState==GS_GAME)&&(ControlingState==CS_MOUSE))
+    {
+        if(Button==mbLeft)
+            Fire=true;
+        if(Button==mbRight)
+            FireAlt=true;
+        if(Button==mbMiddle)
+            SuperWeapon();
+    }
+
+    for(int i=0;i<6;i++)
+        if(PanelButtons[i].Visible)
+            if(TestForCursorPosition(&PanelButtons[i].Position,X,Y))
+            {
+                int a=PanelButtons[i].ID;
+                switch(a)
+                {
+                    case 0:
+                    {
+                        for(int i=0;i<6;i++)
+                            PanelButtons[i].Visible=false;
+                        StartTimers(false);
+
+                        {
+                            AnsiString FileName=ExeDir+"Data\\mission_1.mis";
+                            freopen(FileName.c_str(),"r",stdin);
+                            StartBriefing(1);
+                        }
+                    }
+                    break;
+                    case 2: RecordButton();      break;
+                    case 1:
+                    {
+//                        GameState=GS_SAVINGMENU;
+//                        GetFileList(ExeDir+"Saves\\*.rsf",&SaveFileList);
+
+//                        SaveFileList->SaveToFile(ExeDir+"Saves.txt");
+//                        Application->Terminate();
+
+
+    /*                    {
+                    if(FileExists("saves//qsave.rsf"))
+                        {
+                            for(int i=0;i<6;i++)
+                                PanelButtons[i].Visible=false;
+                            StartLevel(1);
+                            LoadGame("qsave",1);
+                        }
+                    else
+                    {
+                        CreateMessageBox("Нету save-файла!",3,1);
+                        MessageBoxA(Handle,"Нету save-файла!","Can't find qsave.sav!",MB_OK+MB_ICONERROR);
+                    }*/
+                    }
+                    break;
+                    case 3: ControlsButton();    break;
+                    case 4: DevelopersButton();  break;
+                    case 5: PostQuitMessage(0);  break;
+                }
+            }
+    if(GameCheckListBox.Visible)
+        for(int i=0;i<GameCheckListBox.ItemCount;i++)
+        {
+            RECT MyRect;
+            TEXTMETRIC b;
+            GameCheckListBox.Font->GetTextMetrics(&b);
+            SetRect(&MyRect,GameCheckListBox.Position.left,GameCheckListBox.Position.top+20*i,
+            // Тут я посчитал нужным напихать еще комментариев.
+            // При стиле текста BOLD надо делить вот ту формулу на 2.5, тогда все получаестя
+            // Но при нормальном стиле надо ставить 2.6-2.7, иначе будет срабатывать нажатие вне гриниц текста.
+            // Да, и еще. Надо сместить границу на пикселов 10 влево, тогда все получается отлично.
+
+            GameCheckListBox.Position.left+20+b.tmHeight*GameCheckListBox.Items[i].Name.Length()/2.75+10,
+            GameCheckListBox.Position.top+20+20*i);
+            if(TestForCursorPosition(&MyRect,X,Y))
+            {
+                GameCheckListBox.Items[i].Checked=!GameCheckListBox.Items[i].Checked;
+                GameCheckListBox.CheckedItemNumber=i;
+            }
+
+            if(GameCheckListBox.Items[i].Checked)
+                RangerArtefacts[StrToInt(stringlist->Strings[i])]=1;
+            else
+                RangerArtefacts[StrToInt(stringlist->Strings[i])]=2;
+        }
+
+    ButtonsManager.MouseDown(X,Y);
+}
+//---------------------------------------------------------------------------
+
+void __fastcall MouseUp(WPARAM wParam, LPARAM lParam, int Button)
+{
+    int X=LOWORD(lParam);
+    int Y=HIWORD(lParam);
+
+    if((GameState==GS_GAME)&&(ControlingState==CS_MOUSE))
+    {
+        if(Button==mbLeft)
+            Fire=false;
+        if(Button==mbRight)
+            FireAlt=false;
+    }
+
+        if(GameState==GS_MAINMENU)
+        for(int i=0;i<6;i++)
+            PanelButtons[i].Visible=!PanelButtons[i].Visible;
+
+    ButtonsManager.MouseUp(X,Y);
+}
+//---------------------------------------------------------------------------
+
+void __fastcall MouseWheel(WPARAM wParam, LPARAM lParam)
+{
+    int  WheelDelta = (short) HIWORD(wParam);
+    if((ControlingState==CS_MOUSE)&&(GameState==GS_GAME))
+    {
+        int Delta=WheelDelta/120;
+        int NewWeapon=PlayerManager.Player.CurrentWeapon+Delta;
+        if(NewWeapon>5)
+            NewWeapon-=5;
+        if(NewWeapon<!1)
+            NewWeapon+=5;
+        if(PlayerManager.RangerWeapon[NewWeapon][0][1]==0)
+            CornerTextManager.Add("This weapon isn't avalaible yet.",200);
+        if(Laser[1]==1)
+            CornerTextManager.Add("Can't change weapon. Laser is enabled.",200);
+        if((Laser[1]==0)&&(PlayerManager.RangerWeapon[NewWeapon][0][1]==1))
+            PlayerManager.Player.CurrentWeapon=NewWeapon;
+    }
+}
+//---------------------------------------------------------------------------
+
+void __fastcall KeyPress(WPARAM wParam, LPARAM lParam)
+{
+    int Key=(TCHAR) wParam;
+
+    if(GrabbingText)
+    {
+        if((Key>32)||(Key<0))
+            if(GrabbedText.Length()<20)
+                GrabbedText=GrabbedText+(char)Key;
+    }
+    else
+        switch(Key)
+        {
+            case '+':
+            {
+                CurrentVolume+=5;
+                if(CurrentVolume>100)
+                {
+                    CurrentVolume=100;
+                    return;
+                }
+                MusicManager.SetGlobalVolume(CurrentVolume);
+                CornerTextManager.Add("Громкость игры увеличена до "+AnsiString(CurrentVolume)+"%.",1);
+            }
+            break;
+            case '-':
+            {
+                CurrentVolume-=5;
+                if(CurrentVolume<0)
+                {
+                    CurrentVolume=0;
+                    return;
+                }
+                MusicManager.SetGlobalVolume(CurrentVolume);
+                CornerTextManager.Add("Громкость игры уменьшена до "+AnsiString(CurrentVolume)+"%.",1);
+            }
+            break;
+        }
+}
+//---------------------------------------------------------------------------
+void __fastcall BriefingButtonEvent()
+{
+    StartLevel(1);
+}
+//---------------------------------------------------------------------------
+void __fastcall InitManagers()
+{
+    MusicManager.Init(hWnd);
+    MusicManager.SetGlobalVolume(CurrentVolume);
+
+    FontManager.Init(&MainDevice,&MainSprite);
+    FontManager.AddFontEx(MFONT,"Trebuchet MS",16);
+//    FontManager.CreateFontA("Trebuchet MS",16);
+    MainFont=FontManager.GetFont(MFONT);
+
+    TextureManager.Init(&MainDevice,GRAPHRES_LOCATION);
+
+    CornerTextManager.Init(&MainFont);
+    NumberShower.Init(&MainFont);
+
+    FPSShower.Init();
+
+    ButtonsManager.Init();
+    ButtonsManager.InitDrawingInterface(&MainSprite);
+
+    PlayerManager.Init(ExeDir+"Data/Player.ini",&TextureManager);
+    PlayerManager.InitDrawingInterface(&MainSprite);
+
+    EnemiesManager.Init();
+    EnemiesManager.InitDrawingInterface(MainSprite);
+
+    MessageBoxManager.Init(&MainSprite);
+
+    PlayerShotsManager= new TPlayerShotsManager();
+    PlayerShotsManager->Clear();
+    PlayerShotsManager->InitDrawingInterface(&MainSprite);
+
+    TimerManager=new TTimerManager();
+    TimerManager->Init();
+    TimerManager->AddTimerEx(T9,10000,&Time9,false);
+    TimerManager->AddTimerEx(T18,25,&Time18,false);
+    TimerManager->AddTimerEx(AIPath,500,&AIRepathTimer,false);
+    TimerManager->AddTimerEx(AIT,26,&AITimer,false);
+    TimerManager->AddTimerEx(DEAD_TIMER,1200,&DeadTimer,false);
+    TimerManager->AddTimerEx(END_GAME_TIMER,2000,&End_game_timer,false);
+    TimerManager->AddTimerEx(ENGINE_TIMER,1000/ENGINE_TIMER_FPS,EngineTimer,true);
+
+    StarsManager = new TStarsManager();
+    StarsManager->InitDrawingInterface(&MainLine);
+
+    EnemyShotsManager = new TEnemyShotsManager();
+    EnemyShotsManager->Init(&PlayerManager.Player);
+    EnemyShotsManager->InitDrawingInterface(&MainSprite);
+
+    FileManager = new TFileManager();
+}
+//---------------------------------------------------------------------------
+
+void PlayerFire(int xpos, int ypos)
+{
+    AnsiString FolderName=TempFolder+"sound/1.wav";
+    MusicManager.OpenAndPlayEx(FolderName,60,100,false);
+
+
+    PlayerShotsManager->Add(TPoint(xpos,ypos),11,1,100,100);
+}
+//---------------------------------------------------------------------------
+void __fastcall InitControls()
+{
+    for(int i=0;i<6;i++)
+    {
+        PanelButtons[i].Position=CRect(7+537,7+40*i+101,7+208+537,7+40*i+36+101);
+        for(int z=0;z<3;z++)
+            PanelButtons[i].States[z]=CRect(0,36*z,208,36*(z+1));
+        PanelButtons[i].Visible=true;
+        PanelButtons[i].ID=i;
+        PanelButtons[i].CurrentState=1;
+    }
+
+    MyButton.CurrentState=1;
+    MyButton.Position=CRect(755,536,755+31,536+54);
+    MyButton.States[0]=CRect(0,0,31,54);
+    MyButton.States[1]=CRect(31,0,62,54);
+    MyButton.States[2]=CRect(62,0,93,54);
+
+    ButtonsManager.ChangeVisible(GB_BRIEFING,false);
+
+    GameCheckListBox.Visible=false;
+    GameCheckListBox.VisibleMainForm=false;
+    GameCheckListBox.CheckedItem=CRect(0,0,20,20);
+    GameCheckListBox.UncheckedItem=CRect(0,40,20,60);
+
+    D3DXCreateFont(MainDevice,20, 0, FW_DONTCARE, 1, FALSE, DEFAULT_CHARSET,
+        OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE,
+        "Comic Sans MS", &GameCheckListBox.Font);
+
+    MessageButton1.Visible=false;
+    MessageButton1.CurrentState=1;
+    MessageButton1.States[0]=CRect(0,0,48,21);
+    MessageButton1.States[1]=CRect(0,21,48,21*2);
+    MessageButton1.States[2]=CRect(0,21*2,48,21*3);
+
+    MessageButton2.Visible=false;
+    MessageButton2.CurrentState=1;
+    MessageButton2.States[0]=CRect(0,0,48,21);
+    MessageButton2.States[1]=CRect(0,21,48,21*2);
+    MessageButton2.States[2]=CRect(0,21*2,48,21*3);
+
+    ButtonsManager.Add(MyButton,GB_BRIEFING,&BriefingButtonEvent);
+    ButtonsManager.Add(MessageButton1,GB_MESSAGE1,&MessageButton1Event);
+    ButtonsManager.Add(MessageButton2,GB_MESSAGE2,&MessageButton2Event);
+}
+//---------------------------------------------------------------------------
+void __fastcall Time9()
+{
+    int NewMax=EnemiesManager.EnemiesMax[0]+1;
+    NewMax+=1;
+    if(NewMax>25)
+        TimerManager->SetStatus(T9,false);
+    else
+        EnemiesManager.EnemySetMax(1,NewMax);
+}
+//---------------------------------------------------------------------------
+void __fastcall Time18()
+{
+    if(Boss[1]==1)
+    {
+        Boss[5]++;
+        if(Boss[5]>Boss[6])
+            Boss[5]=Boss[6];
+        if(Boss[3]<25)
+            Boss[3]+=2;
+        if(Boss[3]>-50)
+            EnemyShotsManager->Create(6,Boss[2]+75,Boss[3]+75);
+        for(int i=0;i<100;i++)
+            if(PlayerShotsManager->Test(i,TRect(Boss[2]+30,Boss[3]+30,Boss[2]+170,Boss[3]+150),&Boss[5]) )
+            {
+
+                Exploding(1,Boss[2]+30+random(140),Boss[3]+30+random(120));
+                if(Boss[5]<=0)
+                {
+                    Boss[1]=2;
+                    Exploding(3,Boss[2]+25,Boss[3]+25);
+                    SomeShit=0;
+                    TimerManager->SetStatus(END_GAME_TIMER,true);
+                    TimerManager->SetStatus(T18,false);
+                }
+            }
+    }
+}
+//---------------------------------------------------------------------------
+
+
+LRESULT CALLBACK WindowProcedure (HWND, UINT, WPARAM, LPARAM);
+
+/*  Make the class name into a global variable  */
+char szClassName[ ] = "WindowsApp";
+
+int WINAPI WinMain (HINSTANCE hThisInstance,
+                    HINSTANCE hPrevInstance,
+                    LPSTR lpszArgument,
+                    int nFunsterStil)
+
+{
+
+	MSG messages;            /* Here messages to the application are saved */
+    WNDCLASSEX wincl;        /* Data structure for the windowclass */
+
+    /* The Window structure */
+
+    wincl.hInstance = hThisInstance;
+    wincl.lpszClassName = szClassName;
+    wincl.lpfnWndProc = WindowProcedure;      /* This function is called by windows */
+    wincl.style = CS_DBLCLKS;                 /* Catch double-clicks */
+    wincl.cbSize = sizeof (WNDCLASSEX);
+
+    /* Use default icon and mouse-pointer */
+
+
+    wincl.hIcon = LoadIcon (NULL, IDI_APPLICATION);
+    wincl.hIconSm = LoadIcon (NULL, IDI_APPLICATION);
+    wincl.hCursor = LoadCursorFromFile( (TempFolder+"main.ani").c_str());
+
+    wincl.lpszMenuName = NULL;                 /* No menu */
+    wincl.cbClsExtra = 0;                      /* No extra bytes after the window class */
+    wincl.cbWndExtra = 0;                      /* structure or the window instance */
+    /* Use Windows's default color as the background of the window */
+    wincl.hbrBackground = (HBRUSH) COLOR_BACKGROUND;
+
+    /* Register the window class, and if it fails quit the program */
+    if (!RegisterClassEx (&wincl))
+        return 0;
+
+    /* The class is registered, let's create the program*/
+    hWnd = CreateWindowEx (
+    0, szClassName, "Mini Space Rangers",
+    WS_OVERLAPPED  | \
+    WS_MINIMIZEBOX | \
+    WS_POPUP,
+    0,0,1024,768,HWND_DESKTOP,NULL,hThisInstance,NULL);
+
+
+	ShowWindow (hWnd, nFunsterStil);
+	UpdateWindow(hWnd);
+
+	InitGame();
+
+	SetConstants();
+	if( InitD3D(hWnd)==E_FAIL)
+		return 0;
+
+	if( OnCreateDevice(hWnd)==E_FAIL)
+		return 0;
+
+	InitManagers();
+
+	LoadResources();
+	LoadD3DXResources();
+
+	InitControls();
+
+	ShowScreen();
+
+	SetUpMenu();
+
+	while( messages.message!=WM_QUIT )
+    {
+        if( PeekMessage( &messages, NULL, 0, 0, PM_REMOVE ) )
+        {
+            TranslateMessage( &messages );
+            DispatchMessage( &messages );
+        }
+        else
+        {
+            TimerManager->Update(1000/75.0);
+            ReadBufferedData(hWnd);
+            RenderingTimer();
+        }
+    }
+
+	MusicManager.SetGlobalVolume(CurrentVolume);
+	TextureManager.FreeAll();
+    FreeDirectInput();
+
+    for(int i=0;i<6;i++)
+        DeleteFile(TempFolder+"tempbmp"+i+".bmp");
+
+    int q,i;
+    q=NameList->Count;
+    if(q>10)
+        q=10;
+    for(i=0;i<q;i++)
+    {
+        MainRegistry->WriteString("Name"+String(i+1),NameList->Strings[i]);
+        MainRegistry->WriteInteger("Score"+String(i+1),StrToInt(ScoreList->Strings[i]));
+    }
+
+    return messages.wParam;
+}
+
+LRESULT CALLBACK WindowProcedure (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    switch (message)                  /* handle the messages */
+    {
+        case WM_DESTROY:
+            PostQuitMessage(0);
+            break;
+/*        case WM_KEYDOWN:
+        {
+            KeyDown(wParam,lParam);
+            break;
+        }
+        case WM_KEYUP:
+            KeyUp(wParam,lParam);
+            break;              */
+        case WM_MOUSEMOVE:
+            MouseMove(wParam,lParam);
+            break;
+        case WM_LBUTTONDOWN:
+            MouseDown(wParam,lParam,mbLeft);
+			break;
+        case WM_RBUTTONDOWN:
+            MouseDown(wParam,lParam,mbRight);
+            break;
+        case WM_MBUTTONDOWN:
+            MouseDown(wParam,lParam,mbMiddle);
+            break;
+
+        case WM_LBUTTONUP:
+            MouseUp(wParam,lParam,mbLeft);
+            break;
+        case WM_RBUTTONUP:
+            MouseUp(wParam,lParam,mbRight);
+            break;
+        case WM_MBUTTONUP:
+            MouseUp(wParam,lParam,mbMiddle);
+            break;
+
+        case WM_MOUSEWHEEL:
+            MouseWheel(wParam,lParam);
+            break;
+
+        case WM_CHAR:
+            KeyPress(wParam, lParam);
+            break;
+
+        default:                      /* for messages that we don't deal with */
+            return DefWindowProc (hwnd, message, wParam, lParam);
+    }
+    return 0;
+}
+
+HRESULT OnCreateDevice( HWND hDlg )
+{
+    HRESULT hr;
+    BOOL    bExclusive;
+    BOOL    bForeground;
+    BOOL    bImmediate;
+    BOOL    bDisableWindowsKey;
+    DWORD   dwCoopFlags;
+
+    FreeDirectInput();
+
+    bExclusive         = false;
+    bForeground        = true;
+    bImmediate         = false;
+    bDisableWindowsKey = false;
+
+    if( bExclusive )
+        dwCoopFlags = DISCL_EXCLUSIVE;
+    else
+        dwCoopFlags = DISCL_NONEXCLUSIVE;
+
+    if( bForeground )
+        dwCoopFlags |= DISCL_FOREGROUND;
+    else
+        dwCoopFlags |= DISCL_BACKGROUND;
+
+    if( bDisableWindowsKey && !bExclusive && bForeground )
+        dwCoopFlags |= DISCL_NOWINKEY;
+
+    if( FAILED( hr = DirectInput8Create( GetModuleHandle(NULL), DIRECTINPUT_VERSION,
+                                         IID_IDirectInput8, (VOID**)&g_pDI, NULL ) ) )
+        return hr;
+
+    if( FAILED( hr = g_pDI->CreateDevice( GUID_SysKeyboard, &g_pKeyboard, NULL ) ) )
+        return hr;
+
+    if( FAILED( hr = g_pKeyboard->SetDataFormat( &c_dfDIKeyboard ) ) )
+        return hr;
+    hr = g_pKeyboard->SetCooperativeLevel( hDlg, dwCoopFlags );
+    if( hr == DIERR_UNSUPPORTED && !bForeground && bExclusive )
+    {
+        FreeDirectInput();
+        return S_OK;
+    }
+    if( FAILED(hr) )
+        return hr;
+    if( !bImmediate )
+    {
+        DIPROPDWORD dipdw;
+
+        dipdw.diph.dwSize       = sizeof(DIPROPDWORD);
+        dipdw.diph.dwHeaderSize = sizeof(DIPROPHEADER);
+        dipdw.diph.dwObj        = 0;
+        dipdw.diph.dwHow        = DIPH_DEVICE;
+        dipdw.dwData            = SAMPLE_BUFFER_SIZE; // Arbitary buffer size
+
+        if( FAILED( hr = g_pKeyboard->SetProperty( DIPROP_BUFFERSIZE, &dipdw.diph ) ) )
+            return hr;
+    }
+    g_pKeyboard->Acquire();
+
+    return S_OK;
+}
+
+
+VOID FreeDirectInput()
+{
+    if( g_pKeyboard )
+        g_pKeyboard->Unacquire();
+
+    SAFE_RELEASE( g_pKeyboard );
+    SAFE_RELEASE( g_pDI );
+}
+
+
+HRESULT ReadBufferedData( HWND hDlg )
+{
+    AnsiString              strNewText=TEXT("");
+    AnsiString              strLetter;
+    DIDEVICEOBJECTDATA didod[ SAMPLE_BUFFER_SIZE ];  // Receives buffered data
+    DWORD              dwElements;
+    DWORD              i;
+    HRESULT            hr;
+
+    if( NULL == g_pKeyboard )
+        return S_OK;
+
+    dwElements = SAMPLE_BUFFER_SIZE;
+    hr = g_pKeyboard->GetDeviceData( sizeof(DIDEVICEOBJECTDATA),
+                                     didod, &dwElements, 0 );
+    if( hr != DI_OK )
+    {
+        hr = g_pKeyboard->Acquire();
+        while( hr == DIERR_INPUTLOST )
+            hr = g_pKeyboard->Acquire();
+
+        return S_OK;
+    }
+    for( i = 0; i < dwElements; i++ )
+    {
+        // this will display then scan code of the key
+        // plus a 'D' - meaning the key was pressed
+        //   or a 'U' - meaning the key was released
+
+        if( didod[ i ].dwData & 0x80)
+            KeyDown(    didod[ i ].dwOfs    ,   0   );
+        else
+            KeyUp(  didod[ i ].dwOfs    ,   0   );
+    }
+
+    return S_OK;
+}
+//---------------------------------------------------------------------------
+

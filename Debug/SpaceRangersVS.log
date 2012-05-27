@@ -1,0 +1,47 @@
+﻿Build started 12.04.2012 7:00:26.
+     1>Project "C:\SpaceRangersVS\SpaceRangersVS.vcxproj" on node 2 (build target(s)).
+     1>InitializeBuildStatus:
+         Touching "Debug\SpaceRangersVS.unsuccessfulbuild".
+       ClCompile:
+         All outputs are up-to-date.
+       ResourceCompile:
+         All outputs are up-to-date.
+       ManifestResourceCompile:
+         All outputs are up-to-date.
+       Link:
+         J:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\SpaceRangersVS\Debug\SpaceRangersVS.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Debug\SpaceRangersVS.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"C:\SpaceRangersVS\Debug\SpaceRangersVS.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\SpaceRangersVS\Debug\SpaceRangersVS.lib" /MACHINE:X86 Debug\SpaceRangersVS.res
+         Debug\SpaceRangersVS.exe.embed.manifest.res
+         Debug\Common.obj
+         Debug\enemies.obj
+         Debug\GUI.obj
+         Debug\IniReader.obj
+         Debug\main.obj
+         Debug\player.obj
+         Debug\Scripting.obj
+         Debug\TextureManager.obj
+         Debug\Triggers.obj
+         Debug\Types.obj
+         Debug\Utils.obj
+         "..\Sources\jsoncpp-src-0.6.0-rc2\build\vs71\release\lib_json\lib_json.lib"
+         fmod\lib\fmodvc.lib
+     1>lib_json.lib(json_value.obj) : error LNK2038: mismatch detected for '_ITERATOR_DEBUG_LEVEL': value '0' doesn't match value '2' in Common.obj
+     1>lib_json.lib(json_reader.obj) : error LNK2038: mismatch detected for '_ITERATOR_DEBUG_LEVEL': value '0' doesn't match value '2' in Common.obj
+     1>lib_json.lib(json_writer.obj) : error LNK2038: mismatch detected for '_ITERATOR_DEBUG_LEVEL': value '0' doesn't match value '2' in Common.obj
+     1>LINK : warning LNK4098: defaultlib 'MSVCRT' conflicts with use of other libs; use /NODEFAULTLIB:library
+     1>main.obj : error LNK2019: unresolved external symbol _D3DXMatrixScaling@16 referenced in function "void __fastcall ShowScreen(void)" (?ShowScreen@@YIXXZ)
+     1>main.obj : error LNK2019: unresolved external symbol _D3DXCreateLine@8 referenced in function "long __cdecl InitD3D(struct HWND__ *)" (?InitD3D@@YAJPAUHWND__@@@Z)
+     1>main.obj : error LNK2019: unresolved external symbol _D3DXCreateFontA@48 referenced in function "long __cdecl InitD3D(struct HWND__ *)" (?InitD3D@@YAJPAUHWND__@@@Z)
+     1>Types.obj : error LNK2001: unresolved external symbol _D3DXCreateFontA@48
+     1>main.obj : error LNK2019: unresolved external symbol _D3DXCreateSprite@8 referenced in function "long __cdecl InitD3D(struct HWND__ *)" (?InitD3D@@YAJPAUHWND__@@@Z)
+     1>main.obj : error LNK2019: unresolved external symbol _Direct3DCreate9@4 referenced in function "long __cdecl InitD3D(struct HWND__ *)" (?InitD3D@@YAJPAUHWND__@@@Z)
+     1>main.obj : error LNK2019: unresolved external symbol _D3DXMatrixRotationZ@8 referenced in function "public: virtual void __thiscall GameScreen::render(void)" (?render@GameScreen@@UAEXXZ)
+     1>TextureManager.obj : error LNK2019: unresolved external symbol _D3DXCreateTextureFromResourceA@16 referenced in function "private: struct IDirect3DTexture9 * __thiscall TextureManager::load(class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >,bool)" (?load@TextureManager@@AAEPAUIDirect3DTexture9@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z)
+     1>TextureManager.obj : error LNK2019: unresolved external symbol _D3DXCreateTextureFromFileA@12 referenced in function "private: struct IDirect3DTexture9 * __thiscall TextureManager::load(class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >,bool)" (?load@TextureManager@@AAEPAUIDirect3DTexture9@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z)
+     1>TextureManager.obj : error LNK2019: unresolved external symbol _D3DXCreateTextureFromResourceExA@60 referenced in function "private: struct IDirect3DTexture9 * __thiscall TextureManager::load(class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >,int,int,unsigned long,bool)" (?load@TextureManager@@AAEPAUIDirect3DTexture9@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@HHK_N@Z)
+     1>TextureManager.obj : error LNK2019: unresolved external symbol _D3DXCreateTextureFromFileExA@56 referenced in function "private: struct IDirect3DTexture9 * __thiscall TextureManager::load(class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >,int,int,unsigned long,bool)" (?load@TextureManager@@AAEPAUIDirect3DTexture9@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@HHK_N@Z)
+     1>C:\SpaceRangersVS\Debug\SpaceRangersVS.exe : fatal error LNK1120: 10 unresolved externals
+     1>Done Building Project "C:\SpaceRangersVS\SpaceRangersVS.vcxproj" (build target(s)) -- FAILED.
+
+Build FAILED.
+
+Time Elapsed 00:00:00.15

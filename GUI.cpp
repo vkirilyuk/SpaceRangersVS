@@ -6,9 +6,6 @@
 #include "GUI.h"
 
 //---------------------------------------------------------------------------
-
-#pragma package(smart_init)
-//---------------------------------------------------------------------------
 void __fastcall TButtonsManager::Init()
 {
     ZeroMemory(Buttons,sizeof(TMyD3DButton)*100);

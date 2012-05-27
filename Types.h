@@ -7,15 +7,107 @@
 #include "fmod/inc/fmod_errors.h"
 #include "Common.h"
 #include "Utils.h"
-//---------------------------------------------------------------------------
-class GObject
-{
-    public:
-        double xpos;
-        double ypos;
-        bool Exists;
+
+class Rect: public RECT {
+public:
+	Rect() {
+		left = 0, top = 0, right = 0, bottom = 0;
+	}
+	Rect(const RECT & rect) {
+		left = rect.left;
+		top = rect.top;
+		right = rect.right;
+		bottom = rect.bottom;
+	}
+	Rect(int left, int top, int right, int bottom) {
+		this->left = left;
+		this->top = top;
+		this->right = right;
+		this->bottom = bottom;
+	}
+	int width() {
+		return this->right - this->left;
+	}
+	int height() {
+		return this->bottom - this->top;
+	}
+	Rect shift(int x, int y) {
+		return Rect(left + x, top + y, right + x, bottom + y);
+	}
 };
-//---------------------------------------------------------------------------
+
+class Particle {
+public:
+	double x, y;
+};
+
+class Movable: public Particle {
+public:
+	double speed, dx, dy;
+	virtual void move(double time) {
+		x += speed * dx * time;
+		y += speed * dy * time;
+	}
+};
+
+class TexturedObject {
+protected:
+	Rect rect;
+	LPDIRECT3DTEXTURE9 texture;
+	D3DXVECTOR3 center;
+	D3DXVECTOR3 position;
+	D3DCOLOR color;
+	bool hasRect, hasTexture, hasCenter, hasPosition, hasColor;
+public:
+	TexturedObject() {
+		color = FCOLOR;
+		hasRect = hasTexture = hasCenter = hasPosition = hasColor = NULL;
+	}
+	virtual LPDIRECT3DTEXTURE9 getTexture() { if (hasTexture) return texture; return NULL; }
+	virtual RECT * getRect() { if (hasRect) return &rect; return NULL; }
+	virtual D3DXVECTOR3 * getCenter() { if (hasCenter) return &center; return NULL; }
+	virtual D3DXVECTOR3 * getPosition() { if (hasPosition) return &position; return NULL; }
+	virtual D3DCOLOR getColor() { return color; }
+	virtual void setTexture(LPDIRECT3DTEXTURE9 texture) {this->texture = texture; hasTexture = true; }
+	virtual void setRect(RECT rect) { this->rect = rect; hasRect = true; }
+	virtual void setCenter(D3DXVECTOR3 center) { this->center = center; hasCenter = true; }
+	virtual void setPosition(D3DXVECTOR3 position) { this->position = position; hasPosition = true; }
+	virtual void setColor(D3DCOLOR color) { this->color = color; hasColor = true; }
+/*	void draw() {
+		MainSprite->Draw(getTexture(), getRect(), getCenter(), getPosition(), getColor());
+	} */
+};
+
+class AnimatedObject: public TexturedObject {
+public:
+	Rect animationRect;
+	int animationCount;
+	int animationStep;
+public:
+	AnimatedObject() {
+		animationStep = 0;
+		animationCount = 1;
+	}
+	void nextAnimation() {
+		animationStep = (animationStep + 1) % animationCount;
+	}
+	RECT *getRect() {
+		rect = animationRect.shift( animationRect.width() * animationStep, 0);
+		return &rect;
+	}
+};
+
+class MovableAnimatedObject: public AnimatedObject, public Movable {
+public:
+	D3DXVECTOR3 * getCenter() {
+		center = CVector( animationRect.width() / 2, animationRect.height() / 2, 0);
+		return &center;
+	}
+	D3DXVECTOR3 * getPosition() {
+		position = CVector(x, y, 0);
+		return &position;
+	}
+};
 
 class TVisualManager
 {
@@ -34,6 +126,13 @@ struct TLaserParam
     float ScalingY;
 };
 //---------------------------------------------------------------------------
+
+class GObject {
+public:
+	int xpos, ypos;
+	bool Exists;
+};
+
 struct TRangerShot : public GObject
 {
     double XSpeed,YSpeed;
@@ -53,6 +152,7 @@ struct TRangerShot : public GObject
     int ID;
 };
 //---------------------------------------------------------------------------
+
 struct TEnemyShot : public GObject
 {
     double XSpeed,YSpeed;
@@ -85,37 +185,6 @@ class TPlayer : public GObject
         bool EnabledNewLifes;
 
         bool Visible;
-};
-//---------------------------------------------------------------------------
-// just a bit of this and a bit of that
-/*
-class TEnemyShip : public GObject
-{
-
-};
-class EnemyShipBase : public GObject
-{
-public:
-    virtual void draw() {
-    }
-    virtual RECT getBounds() {
-        return shipRect;
-    };       */
-struct TEnemyShip: public GObject {
-    double HP;
-    double XSpeed;
-    double YSpeed;
-    int WeaponPower;
-    int ExperienceForMurder;
-    RECT DrawingRect;
-    RECT DrawingRectDef;
-    RECT ShipRect;
-    RECT ShipRectDef;
-    double CurrentFrame;
-    int MaxFrames;
-    int MaxShots;
-    int ShotsMade;
-    bool Locked;
 };
 
 //---------------------------------------------------------------------------
@@ -257,36 +326,6 @@ class TMusicManager
         void __fastcall SetLoop(int Index,bool Loop);
         void __fastcall SetGlobalLoop(bool Loop);
         int  __fastcall OpenAndPlayEx(string FileName,int FIndex,int SIndex,bool Loop);
-};
-//---------------------------------------------------------------------------
-struct TTextureParam
-{
-    string TextureName;
-    LPDIRECT3DTEXTURE9* Texture;
-    bool InFile;
-    int Height;
-    int Width;
-    D3DCOLOR Color;
-    bool Ex;
-};
-//---------------------------------------------------------------------------
-
-class TTextureManager
-{
-    private:
-        int Count;
-        TTextureParam Textures[MAX_TEXTURES];
-        LPDIRECT3DDEVICE9* OurDevice;
-        HMODULE Source;
-    public:
-        void __fastcall Init(LPDIRECT3DDEVICE9* Device, HMODULE TexSource);
-        int  __fastcall Create(string TexName,bool InFile,LPDIRECT3DTEXTURE9* Texture);
-        int  __fastcall CreateEx(string TexName,bool InFile,int Width,int Height,D3DCOLOR Color,LPDIRECT3DTEXTURE9* Texture);
-        void __fastcall FreeAll();
-        void __fastcall ReloadAll();
-        void __fastcall Free(int Index);
-        int  __fastcall FindByName(string TexName);
-        int  __fastcall FindByTexture(LPDIRECT3DTEXTURE9* Texture);
 };
 //---------------------------------------------------------------------------
 struct  TTimerSet

@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2008.09.29 16:25:53.661.cbproj,C:\Только главный\MiniRangers_2.cbproj=C:\Только главный\MiniRangers_2.cbproj</Transaction>
+    <Transaction>2008.09.29 16:46:13.856.lib,C:\Program Files (x86)\CodeGear\RAD Studio\5.0\lib\release\vclx.lib=</Transaction>
+    <Transaction>2008.09.29 16:46:54.586.lib,C:\Только главный\CBuilder_DX90_libs\ksproxy.lib=</Transaction>
+    <Transaction>2008.09.29 16:47:00.098.lib,C:\Только главный\CBuilder_DX90_libs\ksuser.lib=</Transaction>
+    <Transaction>2008.09.29 16:47:14.386.lib,C:\Только главный\CBuilder_DX90_libs\quartz.lib=</Transaction>
+    <Transaction>2008.09.29 16:47:20.856.lib,C:\Только главный\CBuilder_DX90_libs\strmiids.lib=</Transaction>
+    <Transaction>2008.09.29 16:47:34.624.lib,C:\Только главный\CBuilder_DX90_libs\msdmo.lib=</Transaction>
+  </Transactions>
+</BorlandProject>

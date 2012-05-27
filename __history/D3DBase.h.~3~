@@ -1,0 +1,27 @@
+//---------------------------------------------------------------------------
+
+#ifndef D3DBaseH
+#define D3DBaseH
+
+#include "DirectX/d3dx9.h"
+//---------------------------------------------------------------------------
+
+class D3DPool
+{
+    public:
+        static LPDIRECT3D9          MainD3D;
+        static LPDIRECT3DDEVICE9    MainDevice;
+        static LPD3DXSPRITE         MainSprite;
+        static LPD3DXFONT           MainFont;
+        static LPD3DXFONT           SlaveFont;
+    public:
+
+};
+
+
+
+
+
+
+
+#endif

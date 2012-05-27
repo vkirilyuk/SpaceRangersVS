@@ -1,0 +1,61 @@
+//---------------------------------------------------------------------------
+
+
+#pragma hdrstop
+
+#include "D3DBase.h"
+
+//---------------------------------------------------------------------------
+
+#pragma package(smart_init)
+
+void D3DBase::init(HWND  hWnd)
+{
+	if( NULL == ( MainD3D = Direct3DCreate9( D3D_SDK_VERSION ) ) )
+		return E_FAIL;
+
+	D3DPRESENT_PARAMETERS d3dpp;
+
+	D3DDISPLAYMODE Mode;
+	MainD3D->GetAdapterDisplayMode(D3DADAPTER_DEFAULT, &Mode);
+
+	ZeroMemory( &d3dpp, sizeof(d3dpp) );
+	d3dpp.BackBufferFormat = Mode.Format;
+
+	d3dpp.Windowed = true;
+	d3dpp.Windowed = false;
+	d3dpp.FullScreen_RefreshRateInHz=75;
+	d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
+//	d3dpp.PresentationInterval=D3DPRESENT_INTERVAL_DEFAULT;
+	d3dpp.EnableAutoDepthStencil = true;
+	d3dpp.AutoDepthStencilFormat = D3DFMT_D16;
+
+	d3dpp.BackBufferWidth=SCREEN_WIDTH;
+	d3dpp.BackBufferHeight=SCREEN_HEIGHT;
+	d3dpp.hDeviceWindow=hWnd;
+	d3dpp.BackBufferCount=1;
+
+	if( FAILED( MainD3D->CreateDevice( D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hWnd,
+									  D3DCREATE_SOFTWARE_VERTEXPROCESSING,
+									  &d3dpp, &MainDevice ) ) )
+	{
+		SystemCrash("Пробемы при инициализации главного интерфейса DirectX","Не могу настоить графику",0);
+		return E_FAIL;
+	}
+
+	MainDevice->SetRenderState( D3DRS_AMBIENT, 0xffffffff );
+
+	D3DXCreateSprite(MainDevice,&MainSprite);
+
+	D3DXCreateFontA(MainDevice,12, 0, FW_DONTCARE, 1, FALSE, DEFAULT_CHARSET,
+						 OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE,
+						 NULL, &SlaveFont);
+
+	D3DXCreateLine(MainDevice,&MainLine);
+	MainLine->SetAntialias(true);
+
+	DeviceWasLost=false;
+
+	D3DXMatrixIdentity(&IdentityMatrix);
+    return S_OK;
+}

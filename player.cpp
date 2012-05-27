@@ -6,11 +6,6 @@
 #include "player.h"
 #include "main.h"
 
-//---------------------------------------------------------------------------
-
-#pragma package(smart_init)
-
-//---------------------------------------------------------------------------
 void TPlayerManager::StopMoving()
 {
     Player.MovingDown=0;
@@ -72,12 +67,11 @@ void __fastcall TPlayerManager::RepairPlayerShip()
             Player.HP=Player.MaxHP;
 }
 //---------------------------------------------------------------------------
-void __fastcall TPlayerManager::Init(string IniFile, TTextureManager* TexMan)
+void __fastcall TPlayerManager::Init(string IniFile, TextureManager * textureManager)
 {
     ZeroMemory(&Player,sizeof(TPlayer));
     ZeroMemory(PlayerParameters,sizeof(double)*15);
 
-    string Loc = "graphresource.dll";
     string FileName = "Ranger";
     SpriteCount = 5;
     int X = 64;
@@ -93,16 +87,13 @@ void __fastcall TPlayerManager::Init(string IniFile, TTextureManager* TexMan)
         int Blue=255;
         Color=D3DCOLOR_ARGB(255,Red,Green,Blue);
     }
-    Texture = new LPDIRECT3DTEXTURE9;
-    TexMan->CreateEx(FileName,(Loc==""),0,0,Color,Texture);
+	Texture = textureManager->get("Ranger");
 
     Player.Visible=true;
 }
 //---------------------------------------------------------------------------
 void __fastcall TPlayerManager::MovePlayerShip()
 {
-    int i;
-
     if((Player.MovingLeft)&&(Player.xpos>0)&&(Player.LeftSpeed<3))
         Player.LeftSpeed+=PlayerParameters[1]/2.5;
     else if(Player.LeftSpeed>0)
@@ -177,7 +168,6 @@ void __fastcall TPlayerManager::PlayerDead()
     RangerDeads=true;
     for(int i=0;i<100;i++)
         Shleif[i][1]=0;
-    Pause(1);
     SomeShit=0;
 
     if((Player.Lifes>=0)&&(Player.EnabledNewLifes))
@@ -307,12 +297,10 @@ void __fastcall TPlayerManager::Draw()
     int NumImage=(Player.LeftSpeed-Player.RightSpeed)/6.0*SpriteCount+(SpriteCount-1)/2.0;
     NumImage=NumImage>4?4:NumImage;
     NumImage=NumImage<0?0:NumImage;
-    (*SpritePointer)->Draw(*Texture,&CRect(NumImage*GraphRect.right,0,(NumImage+1)*GraphRect.right,GraphRect.bottom),
+    (*SpritePointer)->Draw(Texture,&CRect(NumImage*GraphRect.right,0,(NumImage+1)*GraphRect.right,GraphRect.bottom),
                             NULL,&CVector(Player.xpos,Player.ypos,0),FCOLOR);
 }
 //---------------------------------------------------------------------------
-
-
 
 void TPlayerShotsManager::Clear()
 {
@@ -326,7 +314,7 @@ void TPlayerShotsManager::Draw()
         if(Shots[i].Exists)
         {
             int qw=Shots[i].CurrentFrame;
-            int Type,Second;
+            int Type;
 
             if(Shots[i].MaxFrames==7)                              Type=0;
             if(Shots[i].MaxFrames==14)                             Type=1;
@@ -549,7 +537,7 @@ void TPlayerShotsManager::Move()
     int pp4=PlayerManager.PlayerParameters[4];
     int pp6=PlayerManager.PlayerParameters[6];
 
-    int i,q;
+    int i;
     for (i=0;i<100;i++)
     if(Shots[i].Exists)
     {
@@ -605,7 +593,7 @@ void TPlayerShotsManager::Move()
                 if(Shots[i].f==0)
                 {
                     Shots[i].a=2;
-                    Shots[i].XSpeed=-EnemiesManager.GetRocketSpeed(Shots[i].xpos+5,Shots[i].ypos+5,false);
+                    Shots[i].XSpeed=- 1; //EnemiesManager.GetRocketSpeed(Shots[i].xpos+5,Shots[i].ypos+5,false);
                     Shots[i].f=50;
                     Shots[i].YSpeed=2;
                 }
@@ -621,32 +609,6 @@ void TPlayerShotsManager::Move()
 
         if(Shots[i].ID==42)
         {
-            for(int k=0;k<5;k++)
-                for(int z=0;z<EnemiesManager.EnemiesNow[k];z++)
-                {
-                    int X,Y;
-                    X=EnemiesManager.Enemies[k][z].xpos-Shots[i].xpos;
-                    Y=EnemiesManager.Enemies[k][z].ypos-Shots[i].ypos;
-                    if(X*X+Y*Y<(100+5*WeaponPower)*(100+5*WeaponPower))
-                    {
-                        int h=1;
-                        while(Lines[h][1]!=0)
-                            h++;
-                        Lines[h][1]=1;
-                        Lines[h][2]=Shots[i].xpos+5;
-                        Lines[h][3]=Shots[i].ypos+5;
-                        Lines[h][4]=EnemiesManager.Enemies[k][z].xpos;
-                        Lines[h][5]=EnemiesManager.Enemies[k][z].ypos;
-                        int Damage=WeaponPower*pp6/2;
-
-                        if(k==0)
-                            EnemiesManager.Enemies[k][z].HP-=1;
-                        else
-                            EnemiesManager.Enemies[k][z].HP-=Damage;
-                        if(EnemiesManager.Enemies[k][z].HP<=0)
-                            EnemiesManager.EnemyDead(k+1,z);
-                    }
-                }
         }
 
         if((Shots[i].ID==21)||(Shots[i].ID==22))
@@ -679,69 +641,17 @@ void TPlayerShotsManager::Move()
         ShieldRect.left=Shots[i].xpos+2;
         ShieldRect.right=Shots[i].xpos+10;
         ShieldRect.top=Shots[i].ypos+2;
-        ShieldRect.bottom=Shots[i].ypos+10;
-
-        for(q=0;q<5;q++)
-            for(int l=0;l<EnemiesManager.EnemiesNow[q];l++)
-            {
-                RECT FirstShip=EnemiesManager.GetEnemyRect(q+1,l);
-                if(TestRects(FirstShip,ShieldRect))
-                {
-                    if((Shots[i].MaxFrames==7)&&(Shots[i].YSpeed==4)&&(Shots[i].XSpeed==0))
-                        FirstWeaponShieldExplode(Shots[i].xpos,Shots[i].ypos,Shots[i].Damage);
-
-                    EnemiesManager.Enemies[q][l].HP-=Shots[i].Damage;
-                        if(Shots[i].MaxFrames!=23)
-                        {
-                            Shots[i].Exists=false;
-                            PlayerStatistic.ShotsHit++;
-                        }
-                        else
-                        {
-                            Shots[i].Damage-=EnemiesManager.Enemies[q][l].HP;
-                            if(Shots[i].Damage<=0)
-                            {
-                                Shots[i].Exists=false;
-                                PlayerStatistic.ShotsHit++;
-                            }
-                        }
-                    if(EnemiesManager.Enemies[q][l].HP<=0)
-                    {
-                        MusicManager.OpenAndPlayEx(TempFolder+"sound//expl0.wav",10,59,false);
-                        EnemiesManager.Enemies[q][l].Exists=false;
-                        EnemiesManager.EnemyDead(q+1,l);
-                    }
-                    else Exploding(1,Shots[i].xpos,Shots[i].ypos);
-                }
-            }
+        ShieldRect.bottom=Shots[i].ypos+10;        
     }
 
     if(Laser[1]==1)
     {
-        RECT (* DominatorRects)[5] = EnemiesManager.DominatorRects;
-
         Laser[2]=xpos-7;
         Laser[3]=ypos-470;
 
         RECT SecondShip1=UpdateRect(CRect(15,10,50,385), Laser[2], Laser[3]);
         RECT SecondShip2=UpdateRect(CRect(5,386,57,475), Laser[2], Laser[3]);
 
-        for(int v=0;v<5;v++)
-            for (i=0;i<EnemiesManager.EnemiesNow[v];i++)
-            {
-                RECT FirstShip=UpdateRect(DominatorRects[EnemiesManager.EnemySeries][v],
-                EnemiesManager.Enemies[v][i].xpos-DominatorRects[EnemiesManager.EnemySeries][v].right/2,
-                EnemiesManager.Enemies[v][i].ypos-DominatorRects[EnemiesManager.EnemySeries][v].bottom/2);
-                if(TestRects(FirstShip,SecondShip1)||TestRects(FirstShip,SecondShip2))
-                {
-                    EnemiesManager.Enemies[v][i].HP-=Laser[4];
-                    if(EnemiesManager.Enemies[v][i].HP<=0)
-                    {
-                        MusicManager.OpenAndPlayEx(TempFolder+"sound//expl0.wav",10,59,false);
-                        EnemiesManager.EnemyDead(v+1,i);
-                    }
-                }
-            }
         Laser[5]-=1;
         if(Laser[5]==0)
             Laser[1]=0;
@@ -759,40 +669,11 @@ void TPlayerShotsManager::Move()
                 Boss[1]=2;
                 Exploding(3,Boss[2]+25,Boss[3]+25);
                 SomeShit=0;
-                TimerManager->SetStatus(END_GAME_TIMER,true);
-                TimerManager->SetStatus(T18,false);
             }
         }
     }
     if(RangerTesla.Exists)
-    {
-        for(int k=0;k<5;k++)
-            for(int z=0;z<EnemiesManager.EnemiesNow[k];z++)
-            {
-                int X,Y;
-                X=EnemiesManager.Enemies[k][z].xpos-xpos+20;
-                Y=EnemiesManager.Enemies[k][z].ypos-ypos+20;
-                if(X*X+Y*Y<(RangerTesla.Radius)*(RangerTesla.Radius))
-                {
-                    int h=1;
-                    while(Lines[h][1]!=0)
-                        h++;
-                    Lines[h][1]=1;
-                    Lines[h][2]=xpos+20;
-                    Lines[h][3]=ypos+20;
-                    Lines[h][4]=EnemiesManager.Enemies[k][z].xpos;
-                    Lines[h][5]=EnemiesManager.Enemies[k][z].ypos;
-                    int Damage=RangerTesla.Power;
-
-                    if(k==0)
-                        EnemiesManager.Enemies[k][z].HP-=1;
-                    else
-                        EnemiesManager.Enemies[k][z].HP-=Damage;
-
-                    if(EnemiesManager.Enemies[k][z].HP<=0)
-                        EnemiesManager.EnemyDead(k+1,z);
-                }
-            }
+    {        
             RangerTesla.ChargeLast-=1;
             if(RangerTesla.ChargeLast<=0)
                 RangerTesla.Exists=false;
@@ -800,8 +681,8 @@ void TPlayerShotsManager::Move()
     for(i=1;i<100;i++)
         if(Lightnings[i].Exists)
         {
-            int x1,y1;
-            TPoint c=EnemiesManager.GetNearestEnemy(Lightnings[i].xpos,Lightnings[i].ypos);
+            /*int x1,y1;
+            TPoint c(10, 10);
             if((c.x!=-1000)&&(c.y!=-1000))
             {
                 x1=c.x;
@@ -825,7 +706,7 @@ void TPlayerShotsManager::Move()
                     EnemiesManager.EnemyDead(x1+1,y1);
             }
             if((c.x==-1000)&&(c.y==-1000))
-                Lightnings[i].Exists=false;
+                Lightnings[i].Exists=false; */
         }
 }
 

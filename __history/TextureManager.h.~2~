@@ -1,0 +1,49 @@
+//---------------------------------------------------------------------------
+
+#ifndef TextureManagerH
+#define TextureManagerH
+//---------------------------------------------------------------------------
+
+#include "DirectX/d3dx9.h"
+
+#include <string>
+#include <map>
+
+using namespace std;
+
+struct TextureParam
+{
+	string Path;
+	string Name;
+	LPDIRECT3DTEXTURE9 Texture;
+	bool InFile;
+	int Height;
+	int Width;
+	D3DCOLOR Color;
+	bool Ex;
+};
+
+class TextureManager
+{
+	private:
+		map<string,TextureParam> Map;
+		LPDIRECT3DDEVICE9* OurDevice;
+		HMODULE Source;
+
+		int Create(TextureParam & texParam);
+
+	public:
+		void __fastcall Init(LPDIRECT3DDEVICE9* Device, HMODULE TexSource);
+
+		int Create(string tName, string tPath, bool inFile);
+		int Create(string tName, string tPath, bool inFile, int width, int height, D3DCOLOR color);
+		void Free(string tName);
+		LPDIRECT3DTEXTURE9* Get(string tName);
+
+		void __fastcall ReloadAll();
+
+		void __fastcall FreeAll();
+};
+//---------------------------------------------------------------------------
+
+#endif

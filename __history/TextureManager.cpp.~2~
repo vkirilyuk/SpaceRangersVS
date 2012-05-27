@@ -1,0 +1,117 @@
+//---------------------------------------------------------------------------
+
+
+#pragma hdrstop
+//----------------------------------------
+
+
+#include "TextureManager.h"
+
+//---------------------------------------------------------------------------
+
+#pragma package(smart_init)
+
+
+void __fastcall TextureManager::Init(LPDIRECT3DDEVICE9* Device, HMODULE TexSource)
+{
+    OurDevice=Device;
+	Source=TexSource;
+}
+//---------------------------------------------------------------------------
+int TextureManager::Create(string tName, string tPath, bool inFile)
+{
+	TextureParam texParam;
+	texParam.Name = tName;
+	texParam.Path = tPath;
+	texParam.InFile = inFile;
+	texParam.Ex = false;
+
+	int Res = Create(texParam);
+	if(Res==D3D_OK)
+	{
+		Map[tName] = texParam;
+		return 0;
+	}
+	return -1;
+}
+
+int TextureManager::Create(TextureParam & texParam)
+{
+	HRESULT Res;
+	if(texParam.Ex)
+	{
+		if(texParam.InFile)
+			Res=D3DXCreateTextureFromFileExA(*OurDevice,texParam.Path.c_str(),texParam.Width,texParam.Height,0,0,D3DFMT_FROM_FILE,D3DPOOL_MANAGED,
+									D3DX_DEFAULT,D3DX_DEFAULT,texParam.Color,NULL,NULL,&(texParam.Texture));
+		else
+			Res=D3DXCreateTextureFromResourceEx(*OurDevice,Source,texParam.Path.c_str(),texParam.Width,texParam.Height,0,0,D3DFMT_FROM_FILE,D3DPOOL_MANAGED,
+									D3DX_DEFAULT,D3DX_DEFAULT,texParam.Color,NULL,NULL,&(texParam.Texture));
+	}
+	else
+	{
+		if(texParam.InFile)
+			Res=D3DXCreateTextureFromFile(*OurDevice,texParam.Path.c_str(),&(texParam.Texture));
+		else
+			Res=D3DXCreateTextureFromResourceA(*OurDevice,Source,texParam.Path.c_str(),&(texParam.Texture));
+
+    }
+
+	return Res;
+}
+
+int TextureManager::Create(string tName, string tPath, bool inFile, int width, int height, D3DCOLOR color)
+{
+	TextureParam texParam;
+	texParam.Name = tName;
+	texParam.Path = tPath;
+	texParam.InFile = inFile;
+	texParam.Width = width;
+	texParam.Height = height;
+	texParam.Color = color;
+	texParam.Ex = true;
+
+	int Res = Create(texParam);
+	if(Res==D3D_OK)
+	{
+		Map[tName] = texParam;
+		return 0;
+	}
+
+	return -1;
+}
+
+void __fastcall TextureManager::FreeAll()
+{
+}
+//---------------------------------------------------------------------------
+void __fastcall TextureManager::ReloadAll()
+{
+	map<string,TextureParam>::iterator itr;
+	for(itr = Map.begin(); itr != Map.end(); ++itr)
+	{
+		itr->second.Texture->Release();
+		Create(itr->second);
+	}
+}
+//---------------------------------------------------------------------------
+LPDIRECT3DTEXTURE9 * TextureManager::Get(string tName)
+{
+	if(Map.count(tName)==0)
+		return NULL;
+	return &(Map[tName].Texture);
+
+}
+
+void TextureManager::Free(string tName)
+{
+	if(Map.count(tName)==0)
+		return;
+	Map[tName].Texture->Release();
+}
+
+void TextureManager::FreeAll()
+{
+	map<string,TextureParam>::iterator itr;
+	for(itr = Map.begin(); itr != Map.end(); ++itr)
+		itr->second.Texture->Release();
+}

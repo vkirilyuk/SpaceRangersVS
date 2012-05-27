@@ -33,8 +33,6 @@ const string strlists[12]=
 const int FWCount[7]={7,14,7,6,0,0,6};
 const int FWACount[5]={7,23,0,5,0};
 
-const int T9=9;
-const int T18=18;
 const int AIPath=10;
 const int AIT=11;
 const int END_GAME_TIMER=12;
@@ -149,7 +147,7 @@ const int   MESSAGETYPE_SCOREQUESTION   =5;
 
 const int   MAX_GAME_BUTTONS        =50;
 
-const float FON_SCALING       =1.96;
+const double FON_SCALING       =1.96;
 const int   EXPL_SCALING            =2;
 const int   WEFFECT_SCALING         =2;
 
@@ -158,15 +156,6 @@ const int   SCREEN_HEIGHT           = 600;
 
 const int   CS_KEYBOARD             =1;
 const int   CS_MOUSE                =2;
-
-//const int   BT_ENTER                =13;
-//const int   BT_LEFTBRACKET          =188;
-//const int   BT_RIGHTBRACKET         =190;
-//const int   BT_NUMPLUS              =107;
-//const int   BT_NUMMINUS             =109;
-
-#define min(a,b)                (a<b)?a:b
-#define max(a,b)                (a>b)?a:b
 
 const int   IC_INFORMATION          =1;
 const int   IC_WARNING              =2;
@@ -190,14 +179,6 @@ const int   ST_DONTSHOW             =0;
 const int   WEAPON_SCORE[5]     ={0,750,3000,10000,25000};
 
 //---------------------------------------------------------------------------
-
-
-/*
-typedef struct tagPOINT
-{
-    LONG  x;
-    LONG  y;
-} POINT, *PPOINT, NEAR *NPPOINT, FAR *LPPOINT; */
 
   struct TPoint
   {

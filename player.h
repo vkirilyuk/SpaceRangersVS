@@ -13,7 +13,7 @@ class TPlayerManager
 {
     private:
 		LPD3DXSPRITE* SpritePointer;
-		LPDIRECT3DTEXTURE9* Texture;
+		LPDIRECT3DTEXTURE9 Texture;
 		RECT   GraphRect;
         RECT   PhysicRect;
         int SpriteCount;
@@ -23,7 +23,7 @@ class TPlayerManager
         double PlayerParameters[15];
         double RangerWeapon[6][2][10];
 
-        void __fastcall Init(string IniFile, TTextureManager* TexMan);
+        void __fastcall Init(string IniFile, TextureManager * textureManager);
         void __fastcall CreatePlayerShip(TPlayer Ship,double ShipParameters[15]);
         void __fastcall RepairPlayerShip();
         void __fastcall HealPlayerShip();
@@ -43,9 +43,6 @@ class TPlayerManager
         void StopMoving();
 };
 
-
-
-
 class   TPlayerShotsManager : public TVisualManager
 {
     protected:
@@ -56,7 +53,6 @@ class   TPlayerShotsManager : public TVisualManager
         void Add(TPoint ppos,int ID,int WeaponLevel,double pp4,double pp6);
         void Move();
         bool Test(int ID,RECT Rect,double* EnemyHP);
-
 };
 
 #endif

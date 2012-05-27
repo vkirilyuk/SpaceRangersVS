@@ -8,8 +8,8 @@
 #include <d3dx9.h>
 #include <d3d9types.h>
 
-#pragma comment(lib,"dinput8.lib")
-#pragma comment(lib,"dxguid.lib")
+#pragma comment(lib, "dinput8.lib")
+#pragma comment(lib, "dxguid.lib")
 
 #include "Utils.h"
 #include "GUI.h"
@@ -17,7 +17,6 @@
 #include "Common.h"
 #include "Types.h"
 #include "Scripting.h"
-#include "Triggers.h"
 #include "enemies.h"
 #include "player.h"
 #include "texturemanager.h"
@@ -55,7 +54,6 @@ void __fastcall MoveStars();
 void __fastcall MoveShleif();
 void __fastcall FirstWeaponShieldExplode(int X,int Y,int Power);
 void __fastcall ShipShleif(int X,int Y);
-extern void __fastcall Pause(int Type);
 void __fastcall SuperWeapon();
 void __fastcall ActivateCheat(int Cheat);
 void __fastcall Exploding(int type,int X,int Y);
@@ -90,17 +88,11 @@ void __fastcall RestoreMyD3D();
 
 void __fastcall InitManagers();
 void __fastcall InitControls();
-void __fastcall InitTriggers();
 
 //----------------------------Drawing something------------------------------
 void __fastcall DrawLighting(int X1,int Y1,int X2,int Y2,D3DCOLOR Color);
 
 void __fastcall DrawSavingMenu();
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-void __fastcall Time9();
-void __fastcall Time18();
-
 
 void __fastcall PlayerShipFire(int WeaponType,int WeaponLevel,bool SecondWeapon);
 void ProceedPhysics();
@@ -109,27 +101,18 @@ void ProceedPhysics();
 extern void PlayerFire(int xpos, int ypos);
 
 //---------------------------------------------------------------------------
-//extern  TTriggerManager     TriggerManager;
 extern  TFontManager        FontManager;
 extern  TCornerTextManager  CornerTextManager;
 extern  TNumberShower       NumberShower;
 extern  TButtonsManager     ButtonsManager;
 extern  TPlayerManager      PlayerManager;
-extern  TEnemiesManager     EnemiesManager;
-extern  TTextureManager     TextureManager;
 extern  TMusicManager       MusicManager;
 extern  TTimerManager      *TimerManager;
 extern  TFPSShower          FPSShower;
 extern  TStatistic          PlayerStatistic;
-extern  TEnemyShotsManager *EnemyShotsManager;
-
 
 extern D3DXMATRIXA16 IdentityMatrix;
 extern RECT DrawingRects[15];
-extern RECT DominatorRects[3][5];
-extern RECT DominatorDrawingRect;
-extern float DominatorScalingFactor[5];
-extern LPDIRECT3DTEXTURE9 DominatorUno[3][5];
 
 extern int Lines[100][10];
 extern int RocketShleif[150][5];
@@ -163,5 +146,6 @@ extern double FireInterval;
 extern TTeslaWeapon RangerTesla;
 extern TLightning Lightnings[100];
 extern LPDIRECT3DTEXTURE9 WeaponImages[5][3];
+
 //---------------------------------------------------------------------------
 #endif

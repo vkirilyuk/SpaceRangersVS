@@ -3,8 +3,9 @@
 #include <stdio.h>
 #pragma hdrstop
 
-#pragma package(smart_init)
 #include "main.h"
+
+#include "TextureManager.h"
 
 #define DIRECTINPUT_VERSION 0x0800
 
@@ -23,22 +24,19 @@ HRESULT ReadBufferedData( HWND hDlg );
 
 HWND hWnd;
 
-TTriggerManager     TriggerManager;
+EnemyBuilder * enemyBuilder;
+
 TFontManager        FontManager;
 TCornerTextManager  CornerTextManager;
 TNumberShower       NumberShower;
 TButtonsManager     ButtonsManager;
 TPlayerManager      PlayerManager;
-TEnemiesManager     EnemiesManager;
-TTextureManager     TextureManager;
 TMusicManager       MusicManager;
 TTimerManager      *TimerManager;
 TFPSShower          FPSShower;
 TStatistic          PlayerStatistic;
 
-TEnemyShotsManager *EnemyShotsManager;
-
-nTextureManager*   	texManager;
+TextureManager * textureManager;
 
 TPlayerShotsManager* PlayerShotsManager;
 
@@ -56,7 +54,6 @@ LPD3DXLINE      MainLine;
 
 TMyD3DCheckListBox GameCheckListBox;
 
-bool FindFile;
 TLaserParam LaserParam;
 
 D3DXMATRIXA16 IdentityMatrix;
@@ -82,7 +79,7 @@ TTeslaWeapon RangerTesla;
 int UndamagerCoff;
 //------------------------Boolean--------------------------------------------
 bool AlreadyLoad = false;
-bool Fire, FireAlt, Undamager, PauseNow, CanShot, AlreadyPressed;
+bool Fire, FireAlt, Undamager, CanShot, AlreadyPressed;
 bool RangerDeads, ScoreQuestion;
 bool NeedShowFPS;
 bool DeviceWasLost;
@@ -127,14 +124,11 @@ string TempFolder = "Data/";
 LPDIRECT3DTEXTURE9 Fon;
 LPDIRECT3DTEXTURE9 CoolExploding1;
 LPDIRECT3DTEXTURE9 CoolExploding2;
-LPDIRECT3DTEXTURE9 DominatorUno[3][5];
 LPDIRECT3DTEXTURE9 WeaponImages[5][3];
 LPDIRECT3DTEXTURE9 Weapon1Effect;
 LPDIRECT3DTEXTURE9 RocketShleifImages;
 LPDIRECT3DTEXTURE9 GeneralFon;
 LPDIRECT3DTEXTURE9 LaserImage;
-
-//Graphics::TBitmap* ImagePictures[6][3];
 
 LPDIRECT3DTEXTURE9 fuck;
 LPDIRECT3DTEXTURE9 RangersLogo;
@@ -164,22 +158,6 @@ HMODULE TEXTRES_LOCATION = LoadLibrary("TextResource.dll");
 
 //---------------------------------------------------------------------------
 
-
-
-class Particle {
-public:
-	double x, y;
-};
-
-class Movable: public Particle {
-public:
-	double speed, dx, dy;
-	virtual void move(double time) {
-		x += speed * dx * time;
-		y += speed * dy * time;
-	}
-};
-
 class Drawable {
 public:
 	virtual void draw() = 0;
@@ -194,6 +172,56 @@ public:
 		y = 0;
 	}
 	void draw() {
+	} 
+};
+/*
+class TexturedObject {
+private:
+	RECT rect;
+	LPDIRECT3DTEXTURE9 texture;
+	D3DXVECTOR3 center;
+	D3DXVECTOR3 position;
+	D3DCOLOR color;
+	bool hasRect, hasTexture, hasCenter, hasPosition, hasColor;
+public:
+	TexturedObject() {
+		color = FCOLOR;
+		hasRect = hasTexture = hasCenter = hasPosition = hasColor = NULL;
+	}
+	virtual LPDIRECT3DTEXTURE9 getTexture() { if (hasTexture) return texture; return NULL; }
+	virtual RECT * getRect() { if (hasRect) return &rect; return NULL; }
+	virtual D3DXVECTOR3 * getCenter() { if (hasCenter) return &center; return NULL; }
+	virtual D3DXVECTOR3 * getPosition() { if (hasPosition) return &position; return NULL; }
+	virtual D3DCOLOR getColor() { return color; }
+	virtual void setTexture(LPDIRECT3DTEXTURE9 texture) {this->texture = texture; hasTexture = true; }
+	virtual void setRect(RECT rect) { this->rect = rect; hasRect = true; }
+	virtual void setCenter(D3DXVECTOR3 center) { this->center = center; hasCenter = true; }
+	virtual void setPosition(D3DXVECTOR3 position) { this->position = position; hasPosition = true; }
+	virtual void setColor(D3DCOLOR color) { this->color = color; hasColor = true; }
+	void draw() {
+		MainSprite->Draw(getTexture(), getRect(), getCenter(), getPosition(), getColor());
+	}
+}; */
+
+class StaticPicture: public TexturedObject {
+public:
+	StaticPicture(LPDIRECT3DTEXTURE9 texture, RECT rect, D3DXVECTOR3 position, D3DCOLOR color = FCOLOR) {
+		setTexture(texture);
+		setRect(rect);
+		setPosition(position);
+		setColor(color);
+	}
+
+	StaticPicture(LPDIRECT3DTEXTURE9 texture, D3DXVECTOR3 position, D3DCOLOR color = FCOLOR) {
+		setTexture(texture);
+		setPosition(position);
+		setColor(color);
+	}
+
+	StaticPicture(LPDIRECT3DTEXTURE9 texture, RECT rect, D3DCOLOR color = FCOLOR) {
+		setTexture(texture);
+		setRect(rect);
+		setColor(color);
 	}
 };
 
@@ -218,7 +246,7 @@ public:
 	RECT getBounds() {
 		int x = (int)this->x;
 		int y = (int)this->y;
-		return CRect(x - width >> 1, y - height >> 1, x + width >> 1, y + height >> 1);
+		return CRect(x - width / 2, y - height / 2, x + width / 2, y + height / 2);
 	}
 };
 
@@ -254,7 +282,7 @@ class TStar : public GObject
         D3DCOLOR Color;
 };
 
-class   TStarsManager
+class TStarsManager
 {
     private:
         TStar Stars[30];
@@ -289,30 +317,7 @@ void TStarsManager::Draw()
 		data[i].z = 1;
 		data[i].rhw = 1;
 		data[i].colour = Stars[i].Color;
-	}
-
-/*	tri_vertex data[] = {
-        //Fan1
-        {100, 100, 1, 1, 0xFF000000}, {  0,  0, 1, 1, 0xFFFF0000}, {200,  0, 1, 1, 0xFF00FF00},
-        {100, 100, 1, 1, 0xFF000000}, {200,  0, 1, 1, 0xFF00FF00}, {200, 200, 1, 1, 0xFF0000FF},
-        {100, 100, 1, 1, 0xFF000000}, {200, 200, 1, 1, 0xFF0000FF}, {  0, 200, 1, 1, 0xFFFFFFFF},
-        {100, 100, 1, 1, 0xFF000000}, {  0, 200, 1, 1, 0xFFFFFFFF}, {  0,  0, 1, 1, 0xFFFF0000},
-        //Fan2
-        { 75, 350, 1, 1, 0xFFFFFFFF}, {  0, 225, 1, 1, 0xFFFF0000}, { 50, 215, 1, 1, 0xFF7F7F00},
-        { 75, 350, 1, 1, 0xFFFFFFFF}, { 50, 215, 1, 1, 0xFF7F7F00}, { 75, 205, 1, 1, 0xFF00FF00},
-        { 75, 350, 1, 1, 0xFFFFFFFF}, { 75, 205, 1, 1, 0xFF00FF00}, {125, 215, 1, 1, 0xFF007F7F},
-        { 75, 350, 1, 1, 0xFFFFFFFF}, {125, 215, 1, 1, 0xFF007F7F}, {150, 235, 1, 1, 0xFF0000FF},
-        //Strip1
-        {250, 150, 1, 1, 0xFFFF0000}, {300, 50, 1, 1, 0xFF00FF00}, {350, 150, 1, 1, 0xFF0000FF},
-        {300, 50, 1, 1, 0xFF00FF00}, {400, 50, 1, 1, 0xFFFF0000}, {350, 150, 1, 1, 0xFF0000FF},
-        {400, 50, 1, 1, 0xFFFF0000}, {450, 150, 1, 1, 0xFF7F7F00}, {350, 150, 1, 1, 0xFF0000FF},
-        //Strip2
-        {250, 350, 1, 1, 0xFFFF0000}, {300, 250, 1, 1, 0xFF00FF00}, {350, 350, 1, 1, 0xFF0000FF},
-        {300, 250, 1, 1, 0xFF00FF00}, {400, 250, 1, 1, 0xFFFF0000}, {350, 350, 1, 1, 0xFF0000FF},
-        {400, 250, 1, 1, 0xFFFF0000}, {450, 350, 1, 1, 0xFF7F7F00}, {350, 350, 1, 1, 0xFF0000FF},
-
-    }; */
-
+	}	
 
 	void *vb_vertices;
 	HRESULT hr;
@@ -341,21 +346,6 @@ void TStarsManager::Draw()
 	MainDevice->DrawPrimitive(D3DPT_POINTLIST, //PrimitiveType
                                    0,                  //StartVertex
                                    30);      //PrimitiveCount */
-
-	/*
-
-    D3DXVECTOR2 Vector[2];
-    (*pLine)->Begin();
-    (*pLine)->Draw(Vector,2,D3DCOLOR_ARGB(255,0,255,0));
-    for(int i=0;i<30;i++)
-    {
-        Vector[0].x=Stars[i].xpos;
-        Vector[0].y=Stars[i].ypos;//=CVector(Stars[i].xpos,Stars[i].ypos,0);
-        Vector[1].x=Stars[i].xpos+1;
-        Vector[1].y=Stars[i].ypos+1;
-        (*pLine)->Draw(Vector,2,Stars[i].Color);
-    }
-    (*pLine)->End(); */
 }
 
 void TStarsManager::Set()
@@ -408,6 +398,30 @@ class Screen {
 
 stack<Screen*> screenStack;
 
+void defineTextures() {
+	for(int i = 0; i < 6; i++) {
+		string TexName = TempFolder + "TempBmp" + str(i) + ".bmp";
+		textureManager->addDeclaration(TextureManager::Declaration(TexName, true));
+	}
+
+	textureManager->loadConfiguration("Data/textures.json");
+}
+
+class D3DRenderer {
+public:
+	void drawTexture(string name, const RECT *rect, const D3DXVECTOR3 * center = NULL, const D3DXVECTOR3 * position = NULL, D3DCOLOR color = FCOLOR) {
+		LPDIRECT3DTEXTURE9 texture = textureManager->get(name);
+		MainSprite->Draw(texture, rect, center, position, color);
+	}
+/*	void drawTexture(string name, int x, int y, D3DCOLOR color = FCOLOR) {
+		LPDIRECT3DTEXTURE9 texture = textureManager->get(name);
+
+	}
+	void drawTexture(string name, int x, int y, RECT & part, D3DCOLOR color = FCOLOR) {
+
+	} */
+} * renderer = new D3DRenderer();
+
 class ArtPanel: public Screen {
     private:
         int ArtPanelState;
@@ -419,10 +433,10 @@ class ArtPanel: public Screen {
         ArtPanel() {
             ArtPanelState = 1;
             ArtefactPanelPos = -200;
-            TextureManager.CreateEx("Artpanel", false, 0, 0, D3DCOLOR_ARGB(255, 0, 0, 0), &ArtPanelTex);
+			ArtPanelTex = textureManager->get("ArtPanel");
 
-            for(int i = 0; i < 12; i++)
-                TextureManager.CreateEx("l" + str(i), false, 0, 0, TCOLOR, &ArtefactImg[i]);
+			for (int i = 0; i < 12; i++)
+				ArtefactImg[i] = textureManager->get("l" + str(i));
 
             for (int i = 0; i < 11; i++)
                 ArtList.push_back( loadTextResource(TEXTRES_LOCATION, "Text_artefact_" + str(i + 1) ) );
@@ -517,7 +531,6 @@ class ArtPanel: public Screen {
 
                 if(ArtefactPanelPos == -200) {
                     ArtPanelState = ARTPANEL_HIDDEN;
-                    Pause(0);
                     PlayerManager.RebuildParameters();
                 }
             }
@@ -693,7 +706,7 @@ class RecordsScreen: public Screen {
         LPDIRECT3DTEXTURE9 background;
     public:
         RecordsScreen() {
-            TextureManager.Create("Controls", false, &background);
+			background = textureManager->get("Controls");
         }
         void render() {
             MainSprite->Draw(background, NULL, NULL, NULL, FCOLOR);
@@ -710,7 +723,8 @@ class AuthorsScreen: public Screen {
         vector<string> slist;
     public:
         AuthorsScreen() {
-            TextureManager.Create("Authors", false, &background);
+			
+			background = textureManager->get("Authors");
             AuthorsTemp = 0;
             slist = split( loadTextResource(TEXTRES_LOCATION, "Text_Developers"), "\n");
         }
@@ -742,7 +756,8 @@ class ControlsScreen: public Screen {
         LPDIRECT3DTEXTURE9 background;
     public:
         ControlsScreen() {
-            TextureManager.Create("Controls", false, &background);
+
+			background = textureManager->get("Controls");
         }
         void render() {
             MainSprite->Draw(background, NULL, NULL, NULL, FCOLOR);
@@ -804,9 +819,9 @@ class BriefingScreen: public Screen {
             BriefingSpeed = 1;
             Briefinga = 1;
 
-            TextureManager.Create("BriefingFon", false, &background);
-            TextureManager.CreateEx("BriefingPanel", false, 0, 0, D3DCOLOR_XRGB(0, 0, 0), &Briefingbmp1);
-            TextureManager.CreateEx("BriefingButtonTexture", false, 0, 0, TCOLOR, &MyButton.Texture);
+			background = textureManager->get("BriefingFon");
+			Briefingbmp1 = textureManager->get("BriefingPanel");
+			MyButton.Texture = textureManager->get("BriefingButtonTexture");
         }
         void render() {
             MainSprite->Draw(background, NULL, NULL, &CVector(760 - Briefinga, 760 - Briefinga, 0), FCOLOR);
@@ -887,10 +902,11 @@ class BriefingScreen: public Screen {
         }
 };
 
+#include <iostream>
+
 class MainMenuScreen: public Screen {
     private:
         void SetUpMenu() {
-            EnemiesManager.EnemySeries = random(3);
 
             int i;
 
@@ -930,21 +946,9 @@ class MainMenuScreen: public Screen {
             Fire = false;
             FireAlt = false;
 
-            for(int i = 1; i <= 5; i++)
-                EnemiesManager.EnemySetMax(i, 0);
-
             Boss[1] = 0;
 
-            EnemyShotsManager->Clear();
-
             PlayerShotsManager->Clear();
-
-            EnemiesManager.EnemySetMax(1, 25);
-
-            for(int i = 0; i < 25; i++) {
-                EnemiesManager.Enemies[0][i].ypos -= random(1000) - 400;
-            }
-
 
             StarsManager->Set();
 
@@ -953,30 +957,47 @@ class MainMenuScreen: public Screen {
             StartTimers(true);
         }
     public:
+		vector<EnemyShip> ships;
+		EnemyShip ship;
         MainMenuScreen() {
             SetUpMenu();
+			for (int i = 0; i < 50; i++) {
+				string klasses[] = {"shtip", "menok", "smersh", "urgant", "ekventor"};
+				EnemyShip ship = enemyBuilder->get( klasses[ rand() % 5 ] );
+				ship.y = - (rand() % 1000);
+				ship.x = rand() % 800;
+				ships.push_back(ship);
+			}
         }
         void render() {
             D3DXMatrixScaling(&MainMatrix, 1, 1, 1);
             MainDevice->SetTransform(D3DTS_WORLD, &MainMatrix);
-            //        MainDevice->SetTransform(D3DTS_WORLD,&IdentityMatrix);
 
             int i;
             D3DXMATRIXA16 Matr;
             D3DXMatrixScaling(&Matr, FON_SCALING, FON_SCALING, 1);
             MainSprite->SetTransform(&Matr);
 
+
             float Z = FON_SCALING;
 
-            if(Fon_top <= 3400)
-                MainSprite->Draw(Fon, &CRect(0, (3400 - Fon_top) / Z, 800 / Z, (4000 - Fon_top) / Z), NULL, NULL, FCOLOR);
+			vector<TexturedObject> data;
 
-            if(Fon_top > 3400) {
-                MainSprite->Draw(Fon, &CRect(0, 0, 800 / Z, (4000 - Fon_top) / Z), NULL, &CVector(0, (Fon_top - 3400) / Z, 0), FCOLOR);
-                MainSprite->Draw(Fon, &CRect(0, (7400 - Fon_top) / Z, 800 / Z, 4000 / Z), NULL, &CVector(0, 0, 0), FCOLOR);
-            }
+            if(Fon_top <= 3400)
+				data.push_back( StaticPicture(textureManager->get("Fon1"), CRect(0, (3400 - Fon_top) / Z, 800 / Z, (4000 - Fon_top) / Z)));
+			else {
+				data.push_back( StaticPicture(textureManager->get("Fon1"), CRect(0, 0, 800 / Z, (4000 - Fon_top) / Z), CVector(0, (Fon_top - 3400) / Z, 0)));
+				data.push_back( StaticPicture(textureManager->get("Fon1"), CRect(0, (7400 - Fon_top) / Z, 800 / Z, 4000 / Z)));
+			}
+
+			for (vector<TexturedObject>::iterator i = data.begin(); i != data.end(); i++) {
+				MainSprite->Draw(i->getTexture(), i->getRect(), i->getCenter(), i->getPosition(), i->getColor());
+			}
+				//i->draw();   
+			data.clear();
 
             MainSprite->SetTransform(&IdentityMatrix);
+
             PlayerShotsManager->Draw();
 
             MainSprite->End();
@@ -984,19 +1005,36 @@ class MainMenuScreen: public Screen {
             MainSprite->Begin(D3DXSPRITE_ALPHABLEND);
             MainDevice->SetTransform(D3DTS_WORLD, &MainMatrix);
 
-            EnemyShotsManager->Draw();
-            EnemiesManager.Draw();
 
             for(i = 0; i < 100; i++)
                 if(Shleif[i][1] == 1) {
                     RECT Rect1 = UpdateRect(DrawingRects[12], Shleif[i][2], Shleif[i][3]);
                     RECT Rect2 = UpdateRect(DrawingRects[12], (5 - Shleif[i][4] / 5), 0);
 
-                    MainSprite->Draw(RocketShleifImages, &CRect(Rect2.left, Rect2.top, Rect2.right, Rect2.bottom), NULL,
+                    MainSprite->Draw(RocketShleifImages, &Rect2, NULL,
                                      &CVector(Rect1.left, Rect1.top, 0), FCOLOR);
                 }
 
             PlayerManager.Draw();
+
+			for (vector<EnemyShip>::iterator ship = ships.begin(); ship != ships.end(); ship++) {
+				ship->nextAnimation();
+				ship->move(1);
+				if (ship->y > 900) {
+					ship->x = rand() % 800;
+					ship->y = -50.;
+				}
+
+				double scaling = ship->scaling;
+
+				D3DXMATRIXA16 m;
+
+				D3DXMatrixScaling(&m, scaling, scaling, 1);
+
+				MainSprite->SetTransform(&m);
+				MainSprite->Draw(ship->getTexture(), ship->getRect(), ship->getCenter(), ship->getPosition(), ship->getColor());
+				MainSprite->SetTransform(&IdentityMatrix);
+			}
 
             for(i = 0; i < 200; i++)
                 if((Explodings[i][0] == 1)) {
@@ -1005,25 +1043,30 @@ class MainMenuScreen: public Screen {
 
                     if(Explodings[i][2] >= Explodings[i][3])
                         Explodings[i][0] = 0;
-                }
+                }						
 
             if(PanelButtons[0].Visible) {
-                MainSprite->Draw(fuck, NULL, NULL, &CVector(800 - 224 - 40, 100, 0), FCOLOR);
+				data.push_back( StaticPicture(fuck, CVector(800 - 224 - 40, 100, 0)));
 
                 for(i = 0; i < 6; i++)
-                    MainSprite->Draw(PanelButtons[i].Texture, &PanelButtons[i].States[PanelButtons[i].CurrentState - 1],
-                                     NULL, &CVector(PanelButtons[i].Position.left, PanelButtons[i].Position.top, 0), FCOLOR);
+					data.push_back( StaticPicture(PanelButtons[i].Texture, PanelButtons[i].States[PanelButtons[i].CurrentState - 1],
+						CVector(PanelButtons[i].Position.left, PanelButtons[i].Position.top, 0)));
             }
 
-            MainSprite->Draw(GeneralFon, &CRect(0, 0, 43, 600), NULL, &CVector(0, 0, 0), D3DCOLOR_ARGB(150, 255, 255, 255));
-            MainSprite->Draw(GeneralFon, &CRect(43, 0, 715 + 43, 43), NULL, &CVector(43, 0, 0), D3DCOLOR_ARGB(150, 255, 255, 255));
-            MainSprite->Draw(GeneralFon, &CRect(758, 0, 42 + 758, 600), NULL, &CVector(758, 0, 0), D3DCOLOR_ARGB(150, 255, 255, 255));
-            MainSprite->Draw(GeneralFon, &CRect(43, 558, 715 + 43, 42 + 558), NULL, &CVector(43, 558, 0), D3DCOLOR_ARGB(150, 255, 255, 255));
 
-            MainSprite->Draw(RangersLogo, NULL, NULL, &CVector(505, 10, 0), FCOLOR);
+			data.push_back( StaticPicture(GeneralFon, CRect(0, 0, 43, 600), CVector(0, 0, 0), D3DCOLOR_ARGB(150, 255, 255, 255)));
+			data.push_back( StaticPicture(GeneralFon, CRect(43, 0, 715 + 43, 43), CVector(43, 0, 0), D3DCOLOR_ARGB(150, 255, 255, 255)));
+			data.push_back( StaticPicture(GeneralFon, CRect(758, 0, 42 + 758, 600), CVector(758, 0, 0), D3DCOLOR_ARGB(150, 255, 255, 255)));
+			data.push_back( StaticPicture(GeneralFon, CRect(43, 558, 715 + 43, 42 + 558), CVector(43, 558, 0), D3DCOLOR_ARGB(150, 255, 255, 255)));
+
+			data.push_back( StaticPicture(RangersLogo, CVector(505, 10, 0)));
+
+			for (vector<TexturedObject>::iterator i = data.begin(); i != data.end(); i++) {
+				MainSprite->Draw(i->getTexture(), i->getRect(), i->getCenter(), i->getPosition(), i->getColor());
+				//i->draw();
+			}
 
             int FPS = FPSShower.GetFPS();
-
             if((FPS != 0) && (NeedShowFPS))
                 MainFont->DrawTextA(MainSprite, (str(FPS) + " fps").c_str(), -1, &CRect(370, 20, 1000, 1000), 0, D3DCOLOR_XRGB(255, 0, 0));
         }
@@ -1038,10 +1081,8 @@ class MainMenuScreen: public Screen {
         void doPhysics() {
             PlayerManager.TryPlayerFire();
             PlayerShotsManager->Move();
-            EnemyShotsManager->Move();
             MoveArtefacts();
             StarsManager->Move();
-            EnemiesManager.MoveEnemies();
             MoveShleif();
             MoveRocketShleif();
             PlayerManager.RepairPlayerShip();
@@ -1057,7 +1098,7 @@ class MainMenuScreen: public Screen {
             PlayerStatistic.GameTime += 1 / 75.0;
             ShipShleif(PlayerManager.Player.xpos, PlayerManager.Player.ypos);
 
-			if((PlayerManager.Player.Lifes >= 0) && (!PauseNow) && (!RangerDeads))
+			if((PlayerManager.Player.Lifes >= 0) && (!RangerDeads))
 				Fon_top += 1;
 			if(Fon_top >= 4000) Fon_top = 0;
         }
@@ -1068,28 +1109,19 @@ class GameScreen: public Screen {
         void StartLevel(int level) {
             ButtonsManager.ChangeVisible(GB_BRIEFING, false);
 
-            EnemiesManager.EnemySeries = random(3);
-
             FireInterval = 1;
             CurrentFonNumber = random(6) + 1;
-
-            int Index = TextureManager.FindByTexture(&Fon);
-
-            if(Index >= 0)
-                TextureManager.Free(Index);
-
-            string Nm = "Fon" + str(CurrentFonNumber);
-            TextureManager.Create(Nm, false, &Fon);
+			
+						
+			Fon = textureManager->get("Fon" + str(CurrentFonNumber));
 
             PlayerManager.Clear();
 
 
             RangerDeads = false;
-            PauseNow = false;
             AlreadyPressed = false;
             Fire = false;
             FireAlt = false;
-            PauseNow = false;
             Undamager = false;
 
             PlayerManager.Player.xpos = 370;
@@ -1130,19 +1162,12 @@ class GameScreen: public Screen {
                 for(int h = 0; h < 2; h++)
                     PlayerManager.RangerWeapon[k][h][5] = PlayerManager.RangerWeapon[k][h][3];
 
-            TimerManager->SetStatus(T9, true);
-            TimerManager->SetStatus(T18, true);
-
             TimerManager->SetStatus(DEAD_TIMER, false);
 
-            int i, c;
+            int i;
 
             for(i = 0; i < 12; i++)
-                RangerArtefacts[i] = 0;
-
-            for(c = 0; c < 5; c++)
-                for (i = 0; i < 25; i++)
-                    EnemiesManager.Enemies[c][i].Exists = false;
+                RangerArtefacts[i] = 0;            
 
             Boss[1] = 0;
 
@@ -1151,19 +1176,10 @@ class GameScreen: public Screen {
 
             PlayerShotsManager->Clear();
 
-            EnemyShotsManager->Clear();
-
             for(i = 0; i < 100; i++)
                 Shleif[i][1] = 0;
 
             StarsManager->Set();
-
-            for(i = 0; i < 5; i++) {
-                EnemiesManager.EnemySetMax(i + 1, 0);
-
-                if(i == 0)
-                    EnemiesManager.EnemySetMax(i + 1, 5);
-            }
 
             for(i = 0; i < 200; i++)
                 Explodings[i][0] = 0;
@@ -1175,8 +1191,6 @@ class GameScreen: public Screen {
 
             while(s[0] != '#')
                 gets(s);
-
-            InitTriggers();
         }
     public:
         GameScreen(int level) {
@@ -1226,9 +1240,6 @@ class GameScreen: public Screen {
 
             PlayerShotsManager->Draw();
 
-            EnemyShotsManager->Draw();
-
-            EnemiesManager.Draw();
 
             for(i = 0; i < 100; i++)
                 if(RangerWeaponEffects[i][1] == 1) {
@@ -1340,17 +1351,8 @@ class GameScreen: public Screen {
                 }
 
             if(Laser[1] == 1) {
-                if(!FindFile)
-                    MainSprite->Draw(LaserImage, NULL, NULL, &CVector(PlayerManager.Player.xpos - 100, PlayerManager.Player.ypos - 550, 0), FCOLOR);
-
-                if(FindFile) {
-                    D3DXMatrixScaling(&Matrix, LaserParam.ScalingX, LaserParam.ScalingY, 1);
-                    MainSprite->SetTransform(&Matrix);
-                    MainSprite->Draw(LaserImage, NULL, NULL, &CVector((PlayerManager.Player.xpos - LaserParam.DeltaX) / LaserParam.ScalingX,
-                                     (PlayerManager.Player.ypos - LaserParam.DeltaY) / LaserParam.ScalingY, 0), FCOLOR);
-                    MainSprite->SetTransform(&IdentityMatrix);
-                }
-            }
+                MainSprite->Draw(LaserImage, NULL, NULL, &CVector(PlayerManager.Player.xpos - 100, PlayerManager.Player.ypos - 550, 0), FCOLOR);
+			}
 
 
             for(i = 0; i < 100; i++)
@@ -1424,7 +1426,7 @@ class GameScreen: public Screen {
                 MainFont->DrawTextA(MainSprite, "Ещё не открыто.", -1, &CRect(680, 580, 1000, 1000), 0, CurrColor);
             }
 
-            if((PauseNow) && (!RangerDeads))
+            if(!RangerDeads)
                 MainFont->DrawTextA(MainSprite, "Пауза. Нажмите Pause для продолжения.", -1, &CRect(35, 580, 1000, 1000), 0, CurrColor);
 
             CornerTextManager.DrawTextEx(5);
@@ -1508,7 +1510,6 @@ class GameScreen: public Screen {
 
                     //            MessageBoxManager.AddMessageBox("Выйти в главное меню?!",IC_QUESTION+LIGHT_BLUE,2,MESSAGETYPE_QUIT); break;
                 case BT_PAUSE:
-                    Pause(2);
                     break;
 
                 case BT_LEFT:
@@ -1577,10 +1578,8 @@ class GameScreen: public Screen {
         void doPhysics() {
             PlayerManager.TryPlayerFire();
             PlayerShotsManager->Move();
-            EnemyShotsManager->Move();
             MoveArtefacts();
             StarsManager->Move();
-            EnemiesManager.MoveEnemies();
             MoveShleif();
             MoveRocketShleif();
             PlayerManager.RepairPlayerShip();
@@ -1599,9 +1598,8 @@ class GameScreen: public Screen {
             PlayerManager.ProceedPhysics();
             ProceedPhysics();
             UpdateGameOverNewScore();
-            TriggerManager.UpdateTriggers();
 
-			if((PlayerManager.Player.Lifes >= 0) && (!PauseNow) && (!RangerDeads))
+			if((PlayerManager.Player.Lifes >= 0) && (!RangerDeads))
 				Fon_top += 1;
 			if(Fon_top >= 4000) Fon_top = 0;
         }
@@ -1622,27 +1620,6 @@ void ProceedPhysics() {
 
 
     ShipShleif(Player.xpos, Player.ypos);
-
-    for(int i = 0; i < 300; i++) {
-
-        RECT PlayerShip = PlayerManager.GetPlayerRect();
-
-        if(EnemyShotsManager->Test(i, PlayerShip, NULL)) {
-            if(!Undamager) {
-                TPoint spos = EnemyShotsManager->GetPos(i);
-                Exploding(1, spos.x, spos.y);
-                int power = EnemyShotsManager->GetDamage(i) * (100 - pp11 - pp5) / 100 - pp10 - pp3;
-
-                if(power <= 7)
-                    power = 7;
-
-                Player.HP -= power;
-
-                if(Player.HP <= 0)
-                    PlayerManager.PlayerDead();
-            }
-        }
-    }
 
     for(i = 0; i < 100; i++)
         if((Artefacts[i][1] == 1) && (Artefacts[i][2] >= Player.xpos - 10) && (Artefacts[i][2] <= Player.xpos + 60) && (Artefacts[i][3] >= Player.ypos - 10) && (Artefacts[i][3] <= Player.ypos + 60)) {
@@ -1682,69 +1659,11 @@ void __fastcall AITimer() {
 
     if(FireLevel < 20)
         FireLevel++;
-
-    for (int i = 0; i < 20; i++)
-        if(FireLevel == 20)
-            if(EnemiesManager.Enemies[0][i].ypos > 0)
-                if(TestRects(CRect(PlayerManager.Player.xpos + 23, 0, PlayerManager.Player.xpos + 28, PlayerManager.Player.ypos),
-                             CRect(EnemiesManager.Enemies[0][i].xpos - 9, 0, EnemiesManager.Enemies[0][i].xpos + 9, PlayerManager.Player.ypos + 50))) {
-
-                    PlayerFire(PlayerManager.Player.xpos, PlayerManager.Player.ypos);
-                    FireLevel = 0;
-                }
-}
-//---------------------------------------------------------------------------
-void __fastcall InitTriggers() {
-    TTrigger Temp;
-
-    int reason;
-    scanf("%d\n", &reason);
-
-    while(reason != -1) {
-        int value;
-        scanf("%d\n", &value);
-        Temp.Reason_type = reason;
-
-        if(reason == TR_SCORE)
-            Temp.Reason_score = value;
-
-        char s[1000];
-        gets(s);
-        int len = 0;
-
-        while(s[0] != '$') {
-            Temp.Script[len++] = s;
-            gets(s);
-        }
-
-        Temp.Script_length = len;
-        TriggerManager.AddTrigger(Temp);
-        scanf("%d\n", &reason);
-    }
-
-    Temp.Reason_type = TR_SCORE;
-
-    for(int i = 0; i < 5; i++) {
-        Temp.Reason_score = WEAPON_SCORE[i];
-        Temp.Script_length = 3;
-        Temp.Script[0] = "UnlockWeapon(" + str(i + 1) + ",0);";
-        Temp.Script[1] = "UnlockWeapon(" + str(i + 1) + ",1);";
-        Temp.Script[2] = "AddCornerText('New weapon avalaible',200);";
-        TriggerManager.AddTrigger(Temp);
-    }
-
-    Temp.Reason_type = Trigger_reason_time;
-    Temp.Reason_time = 10;
-    Temp.Script_length = 1;
-    Temp.Script[0] = ""; //"CreateMessageBox('Сработал триггер времени!',"+string(LIGHT_BLUE+IC_INFORMATION)+",1,"+string(MESSAGETYPE_INFORMATION)+");";
-    TriggerManager.AddTrigger(Temp);
 }
 //---------------------------------------------------------------------------
 void __fastcall ShowScreen() {
     __int64 BeginTime;
     BeginTime = GetTickCount();
-
-    int FPS;
 
     while(BeginTime + ScreenTime >= GetTickCount()) {
         MainDevice->Clear( 0, NULL, D3DCLEAR_TARGET , D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0 );
@@ -1770,17 +1689,12 @@ void __fastcall ShowScreen() {
 }
 //---------------------------------------------------------------------------
 void __fastcall BackToMainMenu() {
-
-    TimerManager->SetStatus(T9, false);
-    TimerManager->SetStatus(T18, false);
-
     while (screenStack.size() > 1) {
         delete screenStack.top();
         screenStack.pop();
     }
 
     StartTimers(true);
-    PauseNow = false;
 
     for(int i = 0; i < 6; i++)
         PanelButtons[i].Visible = true;
@@ -1819,7 +1733,6 @@ void __fastcall MessageButton1Event() {
         break;
 
         case MESSAGETYPE_INFORMATION:
-            Pause(0);
             break;
 
         case MESSAGETYPE_QUIT:
@@ -1838,7 +1751,6 @@ void __fastcall MessageButton2Event() {
             break;
 
         case MESSAGETYPE_QUIT:
-            Pause(0);
             break;
     }
 }
@@ -1911,8 +1823,8 @@ void __fastcall RestoreMyD3D() {
     MainFont->OnLostDevice();
     MainDevice->Release();
     InitD3D(hWnd);
-    TextureManager.ReloadAll();
-    texManager->ReloadAll();
+
+	textureManager->reloadAll();
 
     //--------Just part of code, that must assembly when game restore
 
@@ -1922,101 +1834,81 @@ void __fastcall RestoreMyD3D() {
 //---------------------------------------------------------------------------
 
 void __fastcall LoadD3DXResources() {
-    int i;
+	int i;
 
     for(i = 0; i < 6; i++) {
 
         string TexName = TempFolder + "TempBmp" + str(i) + ".bmp";
-        TextureManager.Create(TexName, true, &PanelButtons[i].Texture);
+		PanelButtons[i].Texture = textureManager->get(TexName);
     }
 
-    TextureManager.CreateEx("DominatorSh", false, 0, 0, TCOLOR, &DominatorShot);
-    TextureManager.CreateEx("Image4", false, 0, 0, D3DCOLOR_XRGB(0, 0, 0), &RangersLogo);
-    TextureManager.Create("WeaponUno23", false, &RocketShleifImages);
-    int l = random(6) + 1;
-    string Nm = "Fon" + str(l);
-    TextureManager.Create(Nm, false, &Fon);
-    TextureManager.Create("GeneralFon", false, &GeneralFon);
+	DominatorShot = textureManager->get("DominatorSh");
+	RangersLogo = textureManager->get("RangersLogo");
+	RocketShleifImages = textureManager->get("WeaponUno23");
 
-    for(int x = 0; x < 3; x++)
-        for(i = 0; i < 5; i++) {
-            string ResName = "Dominator_" + str(x) + "_" + str(i);
-            TextureManager.Create(ResName, false, &DominatorUno[x][i]);
-        }
+	string Nm = "Fon" + str(random(6) + 1);
+	Fon = textureManager->get(Nm);
 
+	GeneralFon = textureManager->get("GeneralFon");
+	
     for(i = 0; i < 5; i++)
         for(int m = 0; m < 2; m++) {
             string ResName = "WeaponUno" + str(i + 1) + str(m + 1);
-            TextureManager.CreateEx(ResName, false, 0, 0, TCOLOR, &WeaponImages[i][m]);
-        }
-
-    TextureManager.CreateEx("Image3", false, 0, 0, TCOLOR, &fuck);
-    TextureManager.CreateEx("weapon1effect", false, 0, 0, TCOLOR, &Weapon1Effect);
-    TextureManager.CreateEx("Artefact", false, 0, 0, TCOLOR, &Artefact);
-    TextureManager.CreateEx("Boss", false, 0, 0, TCOLOR, &BossI);
-
-    for(i = 0; i < 18; i++) {
+			WeaponImages[i][m] = textureManager->get(ResName);
+        }	
+	
+	for(i = 0; i < 18; i++) {
         string  TexName = "eg";
 
         if(i < 10)    TexName += "0" + str(i);
 
         if(i >= 10)   TexName += str(i);
 
-        TextureManager.CreateEx(TexName, false, 0, 0, TCOLOR, &Explo[i]);
+		Explo[i] = textureManager->get(TexName);
     }
 
-    TextureManager.CreateEx("CoolExploding1", false, 0, 0, TCOLOR, &CoolExploding1);
-    TextureManager.CreateEx("CoolExploding2", false, 0, 0, TCOLOR, &CoolExploding2);
-
-    if(!FindFile)
-        TextureManager.Create("laserTexture", false, &LaserImage);
-    else {
-        string FileName;
-
-        if(LaserParam.TexturePath[2] == ':')
-            FileName = LaserParam.TexturePath;
-        else
-            FileName = LaserParam.TexturePath;
-
-        TextureManager.Create(FileName, true, &LaserImage);
-    }
-
-    TextureManager.Create("d123", false, &Panel);
-    TextureManager.CreateEx("d12345", false, 0, 0, FCOLOR, &WarningSpace);
-    TextureManager.CreateEx("SmallShip", false, 0, 0, D3DCOLOR_ARGB(255, 0, 0, 0), &SmallShip);
-    TextureManager.Create("CheckListBoxTexture", false, &GameCheckListBox.Texture);
-    TextureManager.Create("Undamager", false, &UndamagerTexture);
+	fuck = textureManager->get("Image3");
+	Weapon1Effect = textureManager->get("weapon1effect");
+	Artefact = textureManager->get("Artefact");
+	BossI = textureManager->get("Boss");
+	CoolExploding1 = textureManager->get("CoolExploding1");
+	CoolExploding2 = textureManager->get("CoolExploding2");
+	LaserImage = textureManager->get("laserTexture");
+	Panel = textureManager->get("d123");
+	WarningSpace = textureManager->get("d12345");
+	SmallShip = textureManager->get("SmallShip");
+	GameCheckListBox.Texture = textureManager->get("CheckListBoxTexture");
+	UndamagerTexture = textureManager->get("Undamager");
 
     //-------------------MessageBox---------------------------
-    for (i = 0; i < 4; i++) {
+
+	for (i = 0; i < 4; i++) {
         string FileName = "Angle" + str(i + 1);
-        TextureManager.CreateEx(FileName, false, 0, 0, TCOLOR, &Angle[i]);
+		Angle[i] = textureManager->get(FileName);
     }
 
     for (i = 0; i < 4; i++) {
         string FileName = "Line" + str(i + 1);
-        TextureManager.CreateEx(FileName, false, 0, 0, TCOLOR, &Line[i]);
+		Line[i] = textureManager->get(FileName);
     }
 
     for (i = 0; i < 4; i++) {
         string FileName = "Icon" + str(i + 1);
-        TextureManager.CreateEx(FileName, false, 0, 0, TCOLOR, &Icons[i]);
+		Icons[i] = textureManager->get(FileName);
     }
 
     for (i = 0; i < 2; i++) {
         string FileName = "Light" + str(i + 1);
-        TextureManager.CreateEx(FileName, false, 0, 0, TCOLOR, &Light[i]);
+		Light[i] = textureManager->get(FileName);
     }
 
-    TextureManager.CreateEx("Centre", false, 0, 0, TCOLOR, &Centre);
-    TextureManager.CreateEx("Ok", false, 0, 0, TCOLOR, &MessageButton1.Texture);
-    TextureManager.CreateEx("Cancel", false, 0, 0, TCOLOR, &MessageButton2.Texture);
-    //-------------------End MessageBox-------------------------
 
-    TextureManager.Create("Screen", false, &ScreenSaver);
-
-    if(TextureManager.CreateEx("Ranger", false, 0, 0, TCOLOR, &PlayerTexture) == -1)
-        PostQuitMessage(0);
+	Centre = textureManager->get("Centre");
+	MessageButton1.Texture = textureManager->get("Ok");
+	MessageButton2.Texture = textureManager->get("Cancel");
+    //-------------------End MessageBox
+	ScreenSaver = textureManager->get("Screen");
+	PlayerTexture = textureManager->get("Ranger");
 }
 //---------------------------------------------------------------------------
 HRESULT InitD3D( HWND hWnd ) {
@@ -2201,28 +2093,6 @@ void __fastcall ActivateCheat(int Cheat) {
 void __fastcall TestForCrash() {
     RECT SecondShip = PlayerManager.GetPlayerRect();
 
-    if(!Undamager) {
-        for(int v = 0; v < 5; v++)
-            for (int i = 0; i < 25; i++)
-                if(EnemiesManager.Enemies[v][i].Exists) {
-                    RECT FirstShip = EnemiesManager.GetEnemyRect(v + 1, i);
-
-                    if(TestRects(FirstShip, SecondShip)) {
-                        int Damage = EnemiesManager.Enemies[v][i].HP;
-                        EnemiesManager.Enemies[v][i].HP -= PlayerManager.Player.HP;
-
-                        if(EnemiesManager.Enemies[v][i].HP <= 0) {
-                            MusicManager.OpenAndPlayEx(TempFolder + "sound//expl0.wav", 10, 59, false);
-                            EnemiesManager.EnemyDead(v + 1, i);
-                        }
-
-                        PlayerManager.Player.HP -= Damage * 2;
-
-                        if(PlayerManager.Player.HP <= 0)
-                            PlayerManager.PlayerDead();
-                    }
-                }
-
         if(Boss[1] == 1) {
             RECT FirstShip = UpdateRect(CRect(20, 20, 190, 160), Boss[2], Boss[3]);
 
@@ -2232,7 +2102,6 @@ void __fastcall TestForCrash() {
                 PlayerManager.Player.ypos = 650;
             }
         }
-    }
 }
 //---------------------------------------------------------------------------
 void __fastcall MoveShleif() {
@@ -2271,11 +2140,6 @@ void __fastcall UpdateGameOverNewScore() {
 
     if(PlayerManager.Player.DroidRepair > 10)
         PlayerManager.Player.DroidRepair = 10;
-
-    EnemiesManager.EnemySetMax(2, min(PlayerManager.Player.Experience / 500, 20));
-    EnemiesManager.EnemySetMax(3, min(PlayerManager.Player.Experience / 2000, 10));
-    EnemiesManager.EnemySetMax(4, min(PlayerManager.Player.Experience / 3000, 4));
-    EnemiesManager.EnemySetMax(5, min(PlayerManager.Player.Experience / 5000, 2));
 
     if((PlayerManager.Player.Experience >= 50000) && Boss[1] == 0) {
         Boss[1] = 1;
@@ -2336,22 +2200,7 @@ void __fastcall DrawLighting(int X1, int Y1, int X2, int Y2, D3DCOLOR Color) {
 }
 //---------------------------------------------------------------------------
 void __fastcall FirstWeaponShieldExplode(int X, int Y, int Power) {
-    int i, b, x, y;
-
-    for(i = 0; i < 5; i++)
-        for(b = 0; b < 25; b++)
-            if(EnemiesManager.Enemies[i][b].Exists) {
-                x = EnemiesManager.Enemies[i][b].xpos - X;
-                y = EnemiesManager.Enemies[i][b].ypos - Y;
-
-                if(y * y + x * x < 100 * 100)
-                    EnemiesManager.Enemies[i][b].HP -= Power;
-
-                if(EnemiesManager.Enemies[i][b].HP < 0)
-                    EnemiesManager.EnemyDead(i + 1, b);
-            }
-
-    i = 0;
+    int i = 0;
 
     while(RangerWeaponEffects[i][1] != 0)
         i++;
@@ -2393,72 +2242,6 @@ void __fastcall RecordButton() {
 }
 //---------------------------------------------------------------------------
 TPoint __fastcall SetNewCource() {
-    int ShipPosition[10][100][3];
-    int i, x, z, y;
-    int NewRangerX[10], NewRangerY[10];
-
-    for(i = 0; i < 10; i++)
-        for(x = 0; x < 30; x++) {
-            ShipPosition[i][x][2] = EnemiesManager.Enemies[0][x].ypos + 18 * (i + 1);
-            ShipPosition[i][x][1] = EnemiesManager.Enemies[0][x].xpos;
-        }
-
-    for(x = 0; x < 20; x++)
-        for(i = 0; i < 21; i++) {
-            for(y = 1; y < 11; y++) {
-                int X, Y;
-
-                if((i / 2) * 2 == i) X = i / 2;
-                else X = -((i + 1) / 2);
-
-                if(x > 10)Y = 10 - x;
-                else Y = x;
-
-                NewRangerX[y - 1] = PlayerManager.Player.xpos + y * X;
-                NewRangerY[y - 1] = PlayerManager.Player.ypos + y * Y;
-            }
-
-            bool result = true;
-
-            for(y = 0; y < 10; y++) {
-                if((NewRangerX[y] < 50) || (NewRangerX[y] > 850))
-                    result = false;
-
-                if((NewRangerY[y] < 50) || (NewRangerY[y] > 550))
-                    result = false;
-
-                for(z = 0; z < 30; z++)
-                    if(TestRects(CRect(NewRangerX[y] + 5, NewRangerY[y] + 5, NewRangerX[y] + 45, NewRangerY[y] + 55), CRect(ShipPosition[y][z][1], ShipPosition[y][z][2], ShipPosition[y][z][1] + 16, ShipPosition[y][z][2] + 32)))
-                        result = false;
-            }
-
-            if(result == true) {
-                TPoint a;
-                a.x = NewRangerX[9];
-                a.y = NewRangerY[9];
-
-                int PPos = PlayerManager.Player.xpos;
-
-                if(NewRangerX[9] == PPos) {
-                    int q;
-
-                    if(PlayerManager.Player.ypos > 400) a.y -= 25;
-
-                    if(PlayerManager.Player.xpos > 400) a.x = PlayerManager.Player.xpos - 50;
-
-                    if(PlayerManager.Player.xpos < 350) a.x = PlayerManager.Player.xpos + 50;
-
-                    if((PlayerManager.Player.xpos >= 350) && (PlayerManager.Player.xpos <= 400))
-                        if(random(3) == 0) {
-                            a.x = PlayerManager.Player.xpos + (random(3) - 1) * (random(30) + 20);
-                            a.y = PlayerManager.Player.ypos + random(30);
-                        }
-                }
-
-                return a;
-            }
-        }
-
     TPoint a;
     a.x = PlayerManager.Player.xpos;
     a.y = PlayerManager.Player.ypos;
@@ -2503,18 +2286,6 @@ void __fastcall ShipShleif(int X, int Y) {
 }
 //---------------------------------------------------------------------------
 void __fastcall SuperWeapon() {
-    if(PlayerManager.PlayerParameters[7] > 0) {
-        PlayerManager.PlayerParameters[7] -= 1;
-
-        for(int i = 1; i <= 5; i++)
-            for(int w = 0; w < 25; w++)
-                if(EnemiesManager.Enemies[i - 1][w].Exists) {
-                    EnemiesManager.Enemies[i - 1][w].HP -= 200;
-
-                    if(EnemiesManager.Enemies[i - 1][w].HP <= 0)
-                        EnemiesManager.EnemyDead(i, w);
-                }
-    }
 }
 //---------------------------------------------------------------------------
 void __fastcall NewArtefact(int X, int Y) {
@@ -2556,18 +2327,6 @@ void __fastcall Exploding(int type, int X, int Y) {
         Explodings[i][3] = 64;
     }
 }
-//---------------------------------------------------------------------------
-void __fastcall Pause(int Type) {
-    if(Type == 2) {
-        PauseNow = !PauseNow;
-        TimerManager->SetStatus(T9, !PauseNow);
-        TimerManager->SetStatus(T18, !PauseNow);
-    } else {
-        PauseNow = Type;
-        TimerManager->SetStatus(T9, !Type);
-        TimerManager->SetStatus(T18, !Type);
-    }
-}
 void __fastcall KeyDown(int Key, LPARAM lParam) {
 
     if(Key == BT_F)
@@ -2596,31 +2355,12 @@ void __fastcall KeyUp(int Key, LPARAM lParam) {
 }
 //---------------------------------------------------------------------------
 void __fastcall End_game_timer() {
-    if(Boss[1] == 2) {
-        for(int a = 0; a < 5; a++)
-            for(int b = 0; b < 25; b++)
-                if(EnemiesManager.Enemies[a][b].Exists) {
-                    EnemiesManager.Enemies[a][b].Exists = false;
-                    EnemiesManager.EnemyDead(a + 1, b);
-                }
-
-        SomeShit++;
-
-        if(SomeShit == 1)
-            TimerManager->AddTimerEx(END_GAME_TIMER, 1300, &End_game_timer, true);
-
-        if(SomeShit == 2) {
-            TimerManager->SetStatus(END_GAME_TIMER, false);
-            screenStack.push( new CoolMessageBox("Вы стали величайшим героем и спасли Галактику от доминаторов! ", IC_INFORMATION + LIGHT_BLUE, 1, MESSAGETYPE_WINGAME));
-        }
-    }
 }
 //---------------------------------------------------------------------------
 void __fastcall DeadTimer() {
     if((PlayerManager.Player.Lifes >= 0) && (PlayerManager.Player.EnabledNewLifes)) {
         PlayerManager.Player.Visible = true;
         RangerDeads = false;
-        Pause(0);
         Undamager = true;
         UndamagerCoff = 300;
         TimerManager->SetStatus(DEAD_TIMER, false);
@@ -2628,18 +2368,6 @@ void __fastcall DeadTimer() {
 
     if((PlayerManager.Player.Lifes < 0) || (!PlayerManager.Player.EnabledNewLifes)) {
         PlayerManager.Player.Lifes = -1;
-
-        if(SomeShit == 1) {
-            for(int a = 0; a < 5; a++)
-                for(int b = 0; b < 25; b++)
-                    if(EnemiesManager.Enemies[a][b].Exists) {
-                        EnemiesManager.Enemies[a][b].Exists = false;
-                        EnemiesManager.EnemyDead(a + 1, b);
-                    }
-
-            TimerManager->AddTimerEx(DEAD_TIMER, 1300, &DeadTimer, true);
-        }
-
         if(SomeShit == 2) {
             TimerManager->SetStatus(DEAD_TIMER, false);
             screenStack.push(new CoolMessageBox("Вы не смогли убить Блазера и спасти галактику от доминаторов. ", LIGHT_RED + IC_ERROR, 1, MESSAGETYPE_LOSEGAME));
@@ -2772,6 +2500,9 @@ void __fastcall BriefingButtonEvent() {
 }
 //---------------------------------------------------------------------------
 void __fastcall InitManagers() {
+	enemyBuilder = new EnemyBuilder(textureManager);
+	enemyBuilder->loadConfiguration("Data/enemies.json");
+
     MusicManager.Init((HDC)hWnd);
     MusicManager.SetGlobalVolume(CurrentVolume);
 
@@ -2780,7 +2511,8 @@ void __fastcall InitManagers() {
     //    FontManager.CreateFontA("Trebuchet MS",16);
     MainFont = FontManager.GetFont(MFONT);
 
-    TextureManager.Init(&MainDevice, GRAPHRES_LOCATION);
+
+    //TextureManager.Init(&MainDevice, GRAPHRES_LOCATION);
 
     CornerTextManager.Init(&MainFont);
     NumberShower.Init(&MainFont);
@@ -2790,11 +2522,8 @@ void __fastcall InitManagers() {
     ButtonsManager.Init();
     ButtonsManager.InitDrawingInterface(&MainSprite);
 
-    PlayerManager.Init("Data/Player.ini", &TextureManager);
+    PlayerManager.Init("Data/Player.ini", textureManager);
     PlayerManager.InitDrawingInterface(&MainSprite);
-
-    EnemiesManager.Init();
-    EnemiesManager.InitDrawingInterface(MainSprite);
 
     PlayerShotsManager = new TPlayerShotsManager();
     PlayerShotsManager->Clear();
@@ -2802,8 +2531,6 @@ void __fastcall InitManagers() {
 
     TimerManager = new TTimerManager();
     TimerManager->Init();
-    TimerManager->AddTimerEx(T9, 10000, &Time9, false);
-    TimerManager->AddTimerEx(T18, 25, &Time18, false);
     TimerManager->AddTimerEx(AIPath, 500, &AIRepathTimer, false);
     TimerManager->AddTimerEx(AIT, 26, &AITimer, false);
     TimerManager->AddTimerEx(DEAD_TIMER, 1200, &DeadTimer, false);
@@ -2812,10 +2539,6 @@ void __fastcall InitManagers() {
 
     StarsManager = new TStarsManager();
     StarsManager->InitDrawingInterface(&MainLine);
-
-    EnemyShotsManager = new TEnemyShotsManager();
-    EnemyShotsManager->Init(&PlayerManager.Player);
-    EnemyShotsManager->InitDrawingInterface(&MainSprite);
 }
 //---------------------------------------------------------------------------
 
@@ -2872,61 +2595,22 @@ void __fastcall InitControls() {
     ButtonsManager.Add(MessageButton1, GB_MESSAGE1, &MessageButton1Event);
     ButtonsManager.Add(MessageButton2, GB_MESSAGE2, &MessageButton2Event);
 }
-//---------------------------------------------------------------------------
-void __fastcall Time9() {
-    int NewMax = EnemiesManager.EnemiesMax[0] + 1;
-    NewMax += 1;
-
-    if(NewMax > 25)
-        TimerManager->SetStatus(T9, false);
-    else
-        EnemiesManager.EnemySetMax(1, NewMax);
-}
-//---------------------------------------------------------------------------
-void __fastcall Time18() {
-    if(Boss[1] == 1) {
-        Boss[5]++;
-
-        if(Boss[5] > Boss[6])
-            Boss[5] = Boss[6];
-
-        if(Boss[3] < 25)
-            Boss[3] += 2;
-
-        if(Boss[3] > -50)
-            EnemyShotsManager->Create(6, Boss[2] + 75, Boss[3] + 75);
-
-        for(int i = 0; i < 100; i++)
-            if(PlayerShotsManager->Test(i,
-                                        CRect(Boss[2] + 30, Boss[3] + 30, Boss[2] + 170, Boss[3] + 150),
-                                        &Boss[5]) ) {
-
-                Exploding(1, Boss[2] + 30 + random(140), Boss[3] + 30 + random(120));
-
-                if(Boss[5] <= 0) {
-                    Boss[1] = 2;
-                    Exploding(3, Boss[2] + 25, Boss[3] + 25);
-                    SomeShit = 0;
-                    TimerManager->SetStatus(END_GAME_TIMER, true);
-                    TimerManager->SetStatus(T18, false);
-                }
-            }
-    }
-}
-//---------------------------------------------------------------------------
 
 
 LRESULT CALLBACK WindowProcedure (HWND, UINT, WPARAM, LPARAM);
 
+#define _DEBUG
+#include "guicon.h"
+
 /*  Make the class name into a global variable  */
 char szClassName[ ] = "WindowsApp";
-
 int WINAPI WinMain (HINSTANCE hThisInstance,
                     HINSTANCE hPrevInstance,
                     LPSTR lpszArgument,
                     int nFunsterStil)
 
 {
+	RedirectIOToConsole();
 
     MSG messages;            /* Here messages to the application are saved */
     WNDCLASSEX wincl;        /* Data structure for the windowclass */
@@ -2974,12 +2658,15 @@ int WINAPI WinMain (HINSTANCE hThisInstance,
     if( InitD3D(hWnd) == E_FAIL)
         return 0;
 
+	textureManager = new TextureManager(MainDevice, GRAPHRES_LOCATION);
+	defineTextures();
+
     init_lists();
 
     if( OnCreateDevice(hWnd) == E_FAIL)
         return 0;
 
-    InitManagers();
+    InitManagers();		
 
     LoadResources();
     LoadD3DXResources();
@@ -2990,7 +2677,7 @@ int WINAPI WinMain (HINSTANCE hThisInstance,
 
     screenStack.push(new MainMenuScreen());
 
-    while( messages.message != WM_QUIT ) {
+    do {
         if( PeekMessage( &messages, NULL, 0, 0, PM_REMOVE ) ) {
             TranslateMessage( &messages );
             DispatchMessage( &messages );
@@ -2999,10 +2686,10 @@ int WINAPI WinMain (HINSTANCE hThisInstance,
             ReadBufferedData(hWnd);
             RenderingTimer();
         }
-    }
+    } while( messages.message != WM_QUIT );
 
     MusicManager.SetGlobalVolume(CurrentVolume);
-    TextureManager.FreeAll();
+    textureManager->freeAll();
     FreeDirectInput();
 
     return messages.wParam;

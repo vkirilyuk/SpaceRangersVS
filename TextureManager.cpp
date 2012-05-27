@@ -1,161 +1,98 @@
-//---------------------------------------------------------------------------
-
-
-#pragma hdrstop
-//----------------------------------------
-
-
 #include "TextureManager.h"
-
-//---------------------------------------------------------------------------
-
-#pragma package(smart_init)
-
-
-void nTextureManager::Init(LPDIRECT3DDEVICE9* Device, HMODULE TexSource)
-{
-    OurDevice=Device;
-	Source=TexSource;
-}
-//---------------------------------------------------------------------------
-int nTextureManager::Create(string tName, string tPath, bool inFile)
-{
-	TextureParam texParam;
-	texParam.Name = tName;
-	texParam.Path = tPath;
-	texParam.InFile = inFile;
-	texParam.Ex = false;
-
-	int Res = Create(texParam);
-	if(Res==D3D_OK)
-	{
-		Map[tName] = texParam;
-		return 0;
-	}
-	return -1;
-}
-
-int nTextureManager::Create(TextureParam & texParam)
-{
-	HRESULT Res;
-	if(texParam.Ex)
-	{
-		if(texParam.InFile)
-			Res=D3DXCreateTextureFromFileExA(*OurDevice,texParam.Path.c_str(),texParam.Width,texParam.Height,0,0,D3DFMT_FROM_FILE,D3DPOOL_MANAGED,
-									D3DX_DEFAULT,D3DX_DEFAULT,texParam.Color,NULL,NULL,&(texParam.Texture));
-		else
-			Res=D3DXCreateTextureFromResourceEx(*OurDevice,Source,texParam.Path.c_str(),texParam.Width,texParam.Height,0,0,D3DFMT_FROM_FILE,D3DPOOL_MANAGED,
-									D3DX_DEFAULT,D3DX_DEFAULT,texParam.Color,NULL,NULL,&(texParam.Texture));
-	}
-	else
-	{
-		if(texParam.InFile)
-			Res=D3DXCreateTextureFromFile(*OurDevice,texParam.Path.c_str(),&(texParam.Texture));
-		else
-			Res=D3DXCreateTextureFromResourceA(*OurDevice,Source,texParam.Path.c_str(),&(texParam.Texture));
-
-    }
-
-	return Res;
-}
-
-int nTextureManager::Create(string tName, string tPath, bool inFile, int width, int height, D3DCOLOR color)
-{
-	TextureParam texParam;
-	texParam.Name = tName;
-	texParam.Path = tPath;
-	texParam.InFile = inFile;
-	texParam.Width = width;
-	texParam.Height = height;
-	texParam.Color = color;
-	texParam.Ex = true;
-
-	int Res = Create(texParam);
-	if(Res==D3D_OK)
-	{
-		Map[tName] = texParam;
-		return 0;
-	}
-
-	return -1;
-}
-
-//---------------------------------------------------------------------------
-void nTextureManager::ReloadAll()
-{
-	map<string,TextureParam>::iterator itr;
-	for(itr = Map.begin(); itr != Map.end(); ++itr)
-	{
-		itr->second.Texture->Release();
-		Create(itr->second);
-	}
-}
-//---------------------------------------------------------------------------
-LPDIRECT3DTEXTURE9 * nTextureManager::Get(string tName)
-{
-	if(Map.count(tName)==0)
-		return NULL;
-	return &(Map[tName].Texture);
-
-}
-
-void nTextureManager::Free(string tName)
-{
-	if(Map.count(tName)==0)
-		return;
-	Map[tName].Texture->Release();
-}
-
-void nTextureManager::FreeAll()
-{
-	map<string,TextureParam>::iterator itr;
-	for(itr = Map.begin(); itr != Map.end(); ++itr)
-		itr->second.Texture->Release();
-}
-
+#include <json/json.h>
+#include <fstream>
+#include <sstream>
 
 TextureManager::TextureManager(LPDIRECT3DDEVICE9 device, HMODULE source): device(device), source(source) {
 }
 
-LPDIRECT3DTEXTURE9 TextureManager::load(string name, string path, bool inFile = false) {
-	LPDIRECT3DTEXTURE9 texture = get(name);
-	if (texture != NULL)
-		return texture;
-	HRESULT result;
-	if(inFile)
-		result = D3DXCreateTextureFromFile(device, path.c_str(), &texture);
-	else
-		result = D3DXCreateTextureFromResourceA(device, source, path.c_str(), &texture);
-	if (result != D3D_OK)
-		return NULL;
-	set(name, texture);
-	return texture;
+LPDIRECT3DTEXTURE9 TextureManager::load(const Declaration & d) {
+	return load(d.path, d.color, d.inFile);
 }
 
-LPDIRECT3DTEXTURE9 TextureManager::load(string name, string path, int width, int height, D3DCOLOR color, bool inFile = false) {
-	LPDIRECT3DTEXTURE9 texture = get(name);
-	if (texture != NULL)
-		return texture;
+LPDIRECT3DTEXTURE9 TextureManager::load(string path, D3DCOLOR color, bool inFile) {
+	LPDIRECT3DTEXTURE9 texture;
 	HRESULT result;
 	if (inFile)
-		result = D3DXCreateTextureFromFileExA(device, path.c_str(), width, height, 0, 0, D3DFMT_FROM_FILE, D3DPOOL_MANAGED,
+		result = D3DXCreateTextureFromFileExA(device, path.c_str(), 0, 0, 0, 0, D3DFMT_FROM_FILE, D3DPOOL_MANAGED,
 									D3DX_DEFAULT, D3DX_DEFAULT, color, NULL, NULL, &texture);
 	else
-		result = D3DXCreateTextureFromResourceEx(device, source, path.c_str(), width, height, 0, 0, D3DFMT_FROM_FILE, D3DPOOL_MANAGED,
+		result = D3DXCreateTextureFromResourceEx(device, source, path.c_str(), 0, 0, 0, 0, D3DFMT_FROM_FILE, D3DPOOL_MANAGED,
 									D3DX_DEFAULT, D3DX_DEFAULT, color, NULL, NULL, &texture);
 	if (result != D3D_OK)
 		return NULL;
-	set(name, texture);
 	return texture;
 }
 
 LPDIRECT3DTEXTURE9 TextureManager::get(string name) {
 	map<string, LPDIRECT3DTEXTURE9>::iterator i = loaded.find(name);
-	if (i == loaded.end())
+	if (i != loaded.end())
+		return i->second;
+	map<string, Declaration>::iterator j = declarations.find(name);
+	if (j == declarations.end()) {
 		return NULL;
-	return i->second;
+	}
+	LPDIRECT3DTEXTURE9 texture = load(j->second);
+	set(name, texture);
+	return texture;
 }
 
 void TextureManager::set(string name, LPDIRECT3DTEXTURE9 texture) {
-	loaded[name] = texture;		
+	loaded[name] = texture;
+}
+
+void TextureManager::addDeclaration(Declaration declaration) {
+	declarations[declaration.name] = declaration;
+}
+
+void TextureManager::addDeclarations(vector<Declaration> & ds) {
+	for (vector<Declaration>::iterator i = ds.begin(); i != ds.end(); i++)
+		declarations[i->name] = *i;
+}
+
+void TextureManager::addDeclarations(Declaration ds[], int length) {
+	for (int i = 0; i < length; i++) {
+		Declaration & d = ds[i];
+		declarations[d.name] = d;
+	}
+}
+
+void TextureManager::reloadAll() {
+}
+
+void TextureManager::freeAll() {
+}
+
+bool TextureManager::loadConfiguration(string path) {
+	Json::Value root;
+	Json::Reader reader;
+
+	bool parsingSuccessful = reader.parse(ifstream(path), root);
+	if (!parsingSuccessful) {
+		std::cout << "Failed to parse configuration\n"
+			<< reader.getFormatedErrorMessages();
+		return false;
+	}
+	Json::Value colors = root["colors"];
+
+	Json::Value textures = root["textures"];
+	for (Json::Value::iterator i = textures.begin(); i != textures.end(); i++) {
+		Json::Value texture = *i;
+		Declaration d( texture["path"].asString() );
+		if (! texture["color"].isNull() ) {
+			cout << "Found texture with color" << endl;
+			string color = texture["color"].asString();
+			string color_hex = colors[color].asString();
+			stringstream st;
+			st << std::hex << color_hex;
+			st >> d.color;
+			cout << color << " " << color_hex << " " << d.color << endl;
+		}
+		if (! texture["name"].isNull() ) {
+			d.name = texture["name"].asString();
+		}
+		addDeclaration(d);
+	}
+
+	return true;
 }

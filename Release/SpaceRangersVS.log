@@ -1,0 +1,39 @@
+﻿Build started 27.05.2012 20:32:56.
+     1>Project "C:\SpaceRangersVS\SpaceRangersVS.vcxproj" on node 2 (build target(s)).
+     1>InitializeBuildStatus:
+         Touching "Release\SpaceRangersVS.unsuccessfulbuild".
+       ClCompile:
+         J:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /O2 /Oi /Oy- /GL /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt enemies.cpp
+         enemies.cpp
+     1>c:\spacerangersvs\types.h(107): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>c:\spacerangersvs\types.h(107): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+       ResourceCompile:
+         All outputs are up-to-date.
+       Link:
+         J:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\SpaceRangersVS\Release\SpaceRangersVS.exe" /INCREMENTAL:NO /NOLOGO d3d9.lib d3dx9.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Release\SpaceRangersVS.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"C:\SpaceRangersVS\Release\SpaceRangersVS.pdb" /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\SpaceRangersVS\Release\SpaceRangersVS.lib" /MACHINE:X86 Release\SpaceRangersVS.res
+         Release\Common.obj
+         Release\enemies.obj
+         Release\GUI.obj
+         Release\guicon.obj
+         Release\IniReader.obj
+         Release\main.obj
+         Release\player.obj
+         Release\Scripting.obj
+         Release\TextureManager.obj
+         Release\Types.obj
+         Release\Utils.obj
+         "..\Sources\jsoncpp-src-0.6.0-rc2\build\vs71\release\lib_json\lib_json.lib"
+         fmod\lib\fmodvc.lib
+         Generating code
+         Finished generating code
+         SpaceRangersVS.vcxproj -> C:\SpaceRangersVS\Release\SpaceRangersVS.exe
+       Manifest:
+         J:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /outputresource:"C:\SpaceRangersVS\Release\SpaceRangersVS.exe;#1" /manifest Release\SpaceRangersVS.exe.intermediate.manifest
+       FinalizeBuildStatus:
+         Deleting file "Release\SpaceRangersVS.unsuccessfulbuild".
+         Touching "Release\SpaceRangersVS.lastbuildstate".
+     1>Done Building Project "C:\SpaceRangersVS\SpaceRangersVS.vcxproj" (build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:04.29

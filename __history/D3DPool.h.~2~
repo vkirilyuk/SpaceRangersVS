@@ -1,0 +1,30 @@
+//---------------------------------------------------------------------------
+
+#ifndef D3DPoolH
+#define D3DPoolH
+
+#include "DirectX/d3dx9.h"
+//---------------------------------------------------------------------------
+
+class D3DPool
+{
+    private:
+        static LPDIRECT3D9          MainD3D;
+        static LPDIRECT3DDEVICE9    MainDevice;
+        static LPD3DXSPRITE         MainSprite;
+        static LPD3DXFONT           MainFont;
+        static LPD3DXFONT           SlaveFont;
+        static LPD3DXLINE           MainLine;
+    public:
+        static int init();
+        static int reinit();
+        
+};
+
+
+
+
+
+
+
+#endif

@@ -10,8 +10,6 @@
 
 //---------------------------------------------------------------------------
 
-#pragma package(smart_init)
-//---------------------------------------------------------------------------
 TFontParameters __fastcall CreateFontParameters(string Name,int Size)
 {
     TFontParameters Temp;
@@ -244,7 +242,6 @@ int  __fastcall TMusicManager::OpenFile(string FileName)
     int  Index;
     FMUSIC_MODULE* Module;
     FSOUND_STREAM* Stream;
-    int SongCount;
 
     Index=0;
 
@@ -278,7 +275,6 @@ void __fastcall TMusicManager::OpenFileEx(string FileName,int Index)
 {
     FMUSIC_MODULE* Module;
     FSOUND_STREAM* Stream;
-    int SongCount;
 
     if(Songs[Index].Playing)
         StopFile(Index);
@@ -411,107 +407,6 @@ void __fastcall TMusicManager::SetVolume(int Index,int Volume)
         FMUSIC_SetMasterVolume(Songs[Index].Module,Volume*2.55);
     else if(Songs[Index].Stream!=NULL)
         FSOUND_SetVolume(Songs[Index].Channel,Volume*2.55);
-}
-//---------------------------------------------------------------------------
-void __fastcall TTextureManager::Init(LPDIRECT3DDEVICE9* Device, HMODULE TexSource)
-{
-    OurDevice=Device;
-//    Count=0;
-    Source=TexSource;
-}
-//---------------------------------------------------------------------------
-int  __fastcall TTextureManager::Create(string TexName,bool InFile,LPDIRECT3DTEXTURE9* Texture)
-{
-    HRESULT Res;
-    if(InFile)
-        Res=D3DXCreateTextureFromFile(*OurDevice,TexName.c_str(),Texture);
-    else
-        Res=D3DXCreateTextureFromResourceA(*OurDevice,Source,TexName.c_str(),Texture);
-    if(Res==D3D_OK)
-    {
-        Textures[Count].TextureName=TexName;
-        Textures[Count].Texture=Texture;
-        Textures[Count].InFile=InFile;
-        Textures[Count].Ex=false;
-        Count++;
-        return Count-1;
-    }
-    return -1;
-}
-//---------------------------------------------------------------------------
-int  __fastcall TTextureManager::CreateEx(string TexName,bool InFile,int Width,int Height,D3DCOLOR Color,LPDIRECT3DTEXTURE9* Texture)
-{
-    HRESULT Res;
-    if(InFile)
-        Res=D3DXCreateTextureFromFileExA(*OurDevice,TexName.c_str(),Width,Height,0,0,D3DFMT_FROM_FILE,D3DPOOL_MANAGED,
-                                    D3DX_DEFAULT,D3DX_DEFAULT,Color,NULL,NULL,Texture);
-    else
-        Res=D3DXCreateTextureFromResourceEx(*OurDevice,Source,TexName.c_str(),Width,Height,0,0,D3DFMT_FROM_FILE,D3DPOOL_MANAGED,
-                                    D3DX_DEFAULT,D3DX_DEFAULT,Color,NULL,NULL,Texture);
-    if(Res==D3D_OK)
-    {
-        Textures[Count].TextureName=TexName;
-        Textures[Count].Texture=Texture;
-        Textures[Count].InFile=InFile;
-        Textures[Count].Width=Width;
-        Textures[Count].Height=Height;
-        Textures[Count].Color=Color;
-        Textures[Count].Ex=true;
-        Count++;
-        return Count-1;
-    }
-    return -1;
-}
-//---------------------------------------------------------------------------
-void __fastcall TTextureManager::FreeAll()
-{
-    for(int i=0;i<Count;i++)
-        (*Textures[i].Texture)->Release();
-}
-//---------------------------------------------------------------------------
-void __fastcall TTextureManager::ReloadAll()
-{
-    TTextureParam Temp;
-    int TempCount=Count;
-    for(int i=0;i<TempCount;i++)
-    {
-        Temp=Textures[0];
-        Free(0);
-        if(Temp.Ex)
-            CreateEx(Temp.TextureName,Temp.InFile,Temp.Width,Temp.Height,Temp.Color,Temp.Texture);
-        else
-            Create(Temp.TextureName,Temp.InFile,Temp.Texture);
-    }
-}
-//---------------------------------------------------------------------------
-void __fastcall TTextureManager::Free(int Index)
-{
-    (*Textures[Index].Texture)->Release();
-    for(int i=Index;i<Count-1;i++)
-        Textures[i]=Textures[i+1];
-
-//    Textures[Index]=Textures[Count-1];
-    Count--;
-}
-//---------------------------------------------------------------------------
-int __fastcall TTextureManager::FindByName(string TexName)
-{
-    int Index=0;
-    while((Textures[Index].TextureName!=TexName)&&(Index<Count))
-        Index++;
-    if(Index<Count)
-        return Index;
-    return -1;
-}
-//---------------------------------------------------------------------------
-int __fastcall TTextureManager::FindByTexture(LPDIRECT3DTEXTURE9* Texture)
-{
-    int Index=0;
-    while((Textures[Index].Texture!=Texture)&&(Index<Count))
-        Index++;
-    if(Index<Count)
-        return Index;
-    return -1;
 }
 //---------------------------------------------------------------------------
 void __fastcall TTimerManager::AddTimerEx(int ID,int Interval, TMyCallBack CallBack, bool Enabled)

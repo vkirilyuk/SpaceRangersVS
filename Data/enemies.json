@@ -1,0 +1,53 @@
+{
+    "enemies": [
+        {
+            "id": "shtip",
+            "hp": 10,
+            "speed": 5,
+            "texture": "dominator_0_0",
+            "frames": 25,
+            "dimentions": "64 64",
+            "scaling": 0.8
+        }, {
+            "id": "menok",
+            "hp": 20,
+            "speed": 4,
+            "texture": "dominator_0_1",
+            "frames": 25,
+            "dimentions": "64 64",
+            "scaling": 0.9
+        } , {
+            "id": "smersh",
+            "hp": 50,
+            "speed": 3,
+            "texture": "dominator_0_2",
+            "frames": 25,
+            "dimentions": "64 64",
+            "scaling": 1.2
+        } , {
+            "id": "urgant",
+            "hp": 250,
+            "speed": 2,
+            "texture": "dominator_0_3",
+            "frames": 25,
+            "dimentions": "64 64",
+            "scaling": 1.5
+        } , {
+            "id": "ekventor",
+            "hp": 750,
+            "speed": 1,
+            "texture": "dominator_0_4",
+            "frames": 25,
+            "dimentions": "64 64",
+            "scaling": 2
+        }
+    ]
+}
+
+    DominatorScalingFactor[0]=0.4*2;
+    DominatorScalingFactor[1]=0.45*2;
+    DominatorScalingFactor[2]=0.6*2;
+    DominatorScalingFactor[3]=0.75*2;
+    DominatorScalingFactor[4]=1*2;
+
+10 20 50 250 750

@@ -1,0 +1,3 @@
+Test output to stdout
+Enter an integer to test stdin: Yeah, it works!Yeah, it works!
+You entered 1
